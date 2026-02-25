@@ -1,14 +1,10 @@
 /**
- * Space Shooter Game - Complete implementation using pIvotX
+ * pIvotX Game Collection - Multiple games in one app
  * 
  * Features:
- * - Full screen gameplay
- * - Player ship with WASD/Arrow key controls
- * - Shooting mechanics (Space bar)
- * - Enemy waves with increasing difficulty
- * - Power-ups and health system
- * - Score tracking and game over screen
- * - Responsive to window resizing
+ * - Menu system to choose between games
+ * - All games run in full screen
+ * - Space Shooter, Bouncing Ball, Player Movement, and Static Scene
  */
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -17,8 +13,493 @@ import {
   PivotCircle,
   PivotRectangle,
   PivotLabel,
+  PivotLine,
   useGameLoop,
 } from 'pivotx/react';
+import { Point } from 'pivotx';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Game Selection Menu
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface MenuProps {
+  onGameSelect: (game: string) => void;
+}
+
+function GameMenu({ onGameSelect }: MenuProps) {
+  const [screenSize, setScreenSize] = useState({ 
+    width: window.innerWidth, 
+    height: window.innerHeight 
+  });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp') {
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : games.length - 1);
+        e.preventDefault();
+      } else if (e.key === 'ArrowDown') {
+        setSelectedIndex(prev => prev < games.length - 1 ? prev + 1 : 0);
+        e.preventDefault();
+      } else if (e.key === 'Enter') {
+        onGameSelect(games[selectedIndex].id);
+        e.preventDefault();
+      } else if (e.key >= '1' && e.key <= '4') {
+        const gameIndex = parseInt(e.key) - 1;
+        if (gameIndex < games.length) {
+          setSelectedIndex(gameIndex);
+          onGameSelect(games[gameIndex].id);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onGameSelect, selectedIndex]);
+
+  const games = [
+    { id: 'spaceshooter', title: 'Space Shooter', description: 'Full combat game with enemies and power-ups' },
+    { id: 'bouncingball', title: 'Bouncing Ball', description: 'Physics animation demo' },
+    { id: 'playermovement', title: 'Player Movement', description: 'Keyboard controlled character' },
+    { id: 'staticscene', title: 'Static Scene', description: 'Beautiful landscape render' }
+  ];
+
+  return (
+    <div style={{ 
+      margin: 0, 
+      padding: 0, 
+      overflow: 'hidden',
+      background: '#111',
+      width: '100vw',
+      height: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <PivotCanvas width={screenSize.width} height={screenSize.height} background="#111">
+        {/* Background effect */}
+        <PivotRectangle
+          position={{ x: 0, y: 0 }}
+          width={screenSize.width}
+          height={screenSize.height}
+          fill="#111"
+        />
+
+        {/* Title */}
+        <PivotLabel
+          text="pIvotX Game Collection"
+          position={{ x: screenSize.width / 2, y: 100 }}
+          font="bold 48px Arial"
+          fill="#ffffff"
+          textAlign="center"
+        />
+
+        {/* Menu Items */}
+        {games.map((game, index) => {
+          const y = 200 + index * 120;
+          const buttonWidth = 400;
+          const buttonHeight = 80;
+          const x = (screenSize.width - buttonWidth) / 2;
+          const isSelected = index === selectedIndex;
+
+          return (
+            <React.Fragment key={game.id}>
+              {/* Button Background */}
+              <PivotRectangle
+                position={{ x, y }}
+                width={buttonWidth}
+                height={buttonHeight}
+                fill={isSelected ? "#444" : "#333"}
+                stroke={isSelected ? "#00aaff" : "#555"}
+                lineWidth={isSelected ? 3 : 2}
+              />
+              
+              {/* Selection indicator */}
+              {isSelected && (
+                <PivotRectangle
+                  position={{ x: x - 10, y: y + 35 }}
+                  width={8}
+                  height={10}
+                  fill="#00aaff"
+                />
+              )}
+              
+              {/* Game Title */}
+              <PivotLabel
+                text={game.title}
+                position={{ x: screenSize.width / 2, y: y + 25 }}
+                font="bold 24px Arial"
+                fill={isSelected ? "#ffffff" : "#00aaff"}
+                textAlign="center"
+              />
+              
+              {/* Game Description */}
+              <PivotLabel
+                text={game.description}
+                position={{ x: screenSize.width / 2, y: y + 50 }}
+                font="16px Arial"
+                fill={isSelected ? "#fff" : "#ccc"}
+                textAlign="center"
+              />
+              
+              {/* Number indicator */}
+              <PivotLabel
+                text={`${index + 1}`}
+                position={{ x: x + 30, y: y + 40 }}
+                font="bold 18px Arial"
+                fill="#ffff00"
+                textAlign="center"
+              />
+            </React.Fragment>
+          );
+        })}
+
+        {/* Instructions */}
+        <PivotLabel
+          text="↑↓ Arrow Keys: Navigate | Enter: Select | 1-4: Quick Select | ESC: Return to Menu"
+          position={{ x: screenSize.width / 2, y: screenSize.height - 50 }}
+          font="18px Arial"
+          fill="#888"
+          textAlign="center"
+        />
+      </PivotCanvas>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Static Scene Game (Full Screen)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface StaticSceneProps {
+  onExit: () => void;
+}
+
+function StaticSceneGame({ onExit }: StaticSceneProps) {
+  const [screenSize, setScreenSize] = useState({ 
+    width: window.innerWidth, 
+    height: window.innerHeight 
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onExit();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onExit]);
+
+  const { width: W, height: H } = screenSize;
+  
+  return (
+    <div style={{ 
+      margin: 0, padding: 0, overflow: 'hidden', background: '#87CEEB',
+      width: '100vw', height: '100vh'
+    }}>
+      <PivotCanvas width={W} height={H} background="#87CEEB">
+        {/* Sky */}
+        <PivotRectangle position={{ x: 0, y: 0 }} width={W} height={H} fill="#87CEEB" />
+
+        {/* Ground - scale to screen width */}
+        <PivotRectangle 
+          position={{ x: 0, y: H * 0.7 }} 
+          width={W} 
+          height={H * 0.3} 
+          fill="#8B6914" 
+        />
+
+        {/* Sun - positioned relative to screen */}
+        <PivotCircle 
+          center={{ x: W * 0.85, y: H * 0.15 }} 
+          radius={H * 0.08} 
+          fill="#FFD700" 
+          stroke="#FFA500" 
+          lineWidth={3} 
+        />
+
+        {/* Mountain range */}
+        <PivotCircle 
+          center={{ x: W * 0.2, y: H * 0.8 }} 
+          radius={H * 0.2} 
+          fill="#666"
+        />
+        <PivotCircle 
+          center={{ x: W * 0.4, y: H * 0.75 }} 
+          radius={H * 0.15} 
+          fill="#777"
+        />
+        <PivotCircle 
+          center={{ x: W * 0.7, y: H * 0.82 }} 
+          radius={H * 0.18} 
+          fill="#555"
+        />
+
+        {/* Trees */}
+        <PivotRectangle 
+          position={{ x: W * 0.15, y: H * 0.55 }} 
+          width={W * 0.02} 
+          height={H * 0.15} 
+          fill="#6B3A2A" 
+        />
+        <PivotCircle 
+          center={{ x: W * 0.16, y: H * 0.48 }} 
+          radius={H * 0.08} 
+          fill="#228B22" 
+        />
+
+        <PivotRectangle 
+          position={{ x: W * 0.6, y: H * 0.5 }} 
+          width={W * 0.025} 
+          height={H * 0.2} 
+          fill="#6B3A2A" 
+        />
+        <PivotCircle 
+          center={{ x: W * 0.6125, y: H * 0.4 }} 
+          radius={H * 0.1} 
+          fill="#228B22" 
+        />
+
+        {/* Title */}
+        <PivotLabel 
+          text="Static Landscape Scene" 
+          position={{ x: W / 2, y: H * 0.1 }}
+          font={`bold ${Math.max(24, W * 0.03)}px Arial`} 
+          fill="#333" 
+          textAlign="center"
+        />
+
+        {/* Instructions */}
+        <PivotLabel
+          text="Press ESC to return to menu"
+          position={{ x: W / 2, y: H - 30 }}
+          font="18px Arial"
+          fill="rgba(0,0,0,0.7)"
+          textAlign="center"
+        />
+      </PivotCanvas>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bouncing Ball Game (Full Screen)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface BouncingBallProps {
+  onExit: () => void;
+}
+
+function BouncingBallGame({ onExit }: BouncingBallProps) {
+  const [screenSize, setScreenSize] = useState({ 
+    width: window.innerWidth, 
+    height: window.innerHeight 
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onExit();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onExit]);
+
+  const { width: W, height: H } = screenSize;
+  const ball = useRef({ x: W / 2, y: H / 2, vx: 300, vy: 200, r: Math.min(W, H) * 0.03 });
+  const [, setTick] = useState(0);
+
+  useGameLoop((dt) => {
+    const b = ball.current;
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    if (b.x - b.r < 0 || b.x + b.r > W) b.vx *= -1;
+    if (b.y - b.r < 0 || b.y + b.r > H) b.vy *= -1;
+    setTick(t => t + 1);
+  });
+
+  return (
+    <div style={{ 
+      margin: 0, padding: 0, overflow: 'hidden', background: '#1a1a2e',
+      width: '100vw', height: '100vh'
+    }}>
+      <PivotCanvas width={W} height={H} background="#1a1a2e">
+        <PivotRectangle position={{ x: 0, y: 0 }} width={W} height={H} fill="#1a1a2e" />
+
+        <PivotCircle
+          center={{ x: ball.current.x, y: ball.current.y }}
+          radius={ball.current.r}
+          fill="#e94560"
+          stroke="white"
+          lineWidth={3}
+        />
+
+        <PivotLabel
+          text={`x: ${Math.round(ball.current.x)}  y: ${Math.round(ball.current.y)}`}
+          position={{ x: W / 2, y: 50 }}
+          font="24px monospace"
+          fill="rgba(255,255,255,0.8)"
+          textAlign="center"
+        />
+
+        <PivotLabel
+          text="Bouncing Ball Physics Demo"
+          position={{ x: W / 2, y: 100 }}
+          font="bold 32px Arial"
+          fill="white"
+          textAlign="center"
+        />
+
+        <PivotLabel
+          text="Press ESC to return to menu"
+          position={{ x: W / 2, y: H - 30 }}
+          font="18px Arial"
+          fill="rgba(255,255,255,0.7)"
+          textAlign="center"
+        />
+      </PivotCanvas>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Player Movement Game (Full Screen)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface PlayerMovementProps {
+  onExit: () => void;
+}
+
+function PlayerMovementGame({ onExit }: PlayerMovementProps) {
+  const [screenSize, setScreenSize] = useState({ 
+    width: window.innerWidth, 
+    height: window.innerHeight 
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const { width: W, height: H } = screenSize;
+  const player = useRef({ x: W / 2, y: H / 2, size: Math.min(W, H) * 0.05 });
+  const score = useRef(0);
+  const keys = useRef<Record<string, boolean>>({});
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => { 
+      keys.current[e.key.toLowerCase()] = true;
+      if (e.key === 'Escape') onExit();
+    };
+    const up = (e: KeyboardEvent) => { keys.current[e.key.toLowerCase()] = false; };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, [onExit]);
+
+  useGameLoop((dt) => {
+    const p = player.current;
+    const speed = Math.min(W, H) * 0.5;
+    if (keys.current['arrowleft'] || keys.current['a']) p.x -= speed * dt;
+    if (keys.current['arrowright'] || keys.current['d']) p.x += speed * dt;
+    if (keys.current['arrowup'] || keys.current['w']) p.y -= speed * dt;
+    if (keys.current['arrowdown'] || keys.current['s']) p.y += speed * dt;
+
+    const half = p.size / 2;
+    p.x = Math.max(half, Math.min(W - half, p.x));
+    p.y = Math.max(half, Math.min(H - half, p.y));
+
+    score.current += dt * 10;
+    setTick(t => t + 1);
+  });
+
+  const p = player.current;
+
+  return (
+    <div style={{ 
+      margin: 0, padding: 0, overflow: 'hidden', background: '#0f3460',
+      width: '100vw', height: '100vh'
+    }}>
+      <PivotCanvas width={W} height={H} background="#0f3460">
+        <PivotRectangle position={{ x: 0, y: 0 }} width={W} height={H} fill="#0f3460" />
+
+        {/* Player */}
+        <PivotRectangle
+          position={{ x: p.x - p.size / 2, y: p.y - p.size / 2 }}
+          width={p.size}
+          height={p.size}
+          fill="#e94560"
+          stroke="white"
+          lineWidth={3}
+        />
+
+        {/* Score */}
+        <PivotLabel
+          text={`Score: ${Math.floor(score.current)}`}
+          position={{ x: 30, y: 40 }}
+          font="bold 28px Arial"
+          fill="white"
+          textAlign="left"
+        />
+
+        {/* Title */}
+        <PivotLabel
+          text="Player Movement Demo"
+          position={{ x: W / 2, y: 40 }}
+          font="bold 32px Arial"
+          fill="white"
+          textAlign="center"
+        />
+
+        {/* Controls */}
+        <PivotLabel
+          text="WASD or Arrow Keys to move"
+          position={{ x: W / 2, y: H - 60 }}
+          font="20px Arial"
+          fill="rgba(255,255,255,0.8)"
+          textAlign="center"
+        />
+
+        <PivotLabel
+          text="Press ESC to return to menu"
+          position={{ x: W / 2, y: H - 30 }}
+          font="18px Arial"
+          fill="rgba(255,255,255,0.7)"
+          textAlign="center"
+        />
+      </PivotCanvas>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Game Objects & Types
@@ -80,7 +561,7 @@ interface Explosion {
 // Game Hook
 // ─────────────────────────────────────────────────────────────────────────────
 
-function useSpaceShooter() {
+function useSpaceShooter(onExit: () => void) {
   const [screenSize, setScreenSize] = useState({ 
     width: window.innerWidth, 
     height: window.innerHeight 
@@ -146,6 +627,7 @@ function useSpaceShooter() {
     const handleKeyDown = (e: KeyboardEvent) => { 
       keys.current[e.key.toLowerCase()] = true;
       if (e.key === ' ') e.preventDefault();
+      if (e.key === 'Escape') onExit();
     };
     const handleKeyUp = (e: KeyboardEvent) => { 
       keys.current[e.key.toLowerCase()] = false; 
@@ -157,7 +639,7 @@ function useSpaceShooter() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [onExit]);
 
   // Collision detection
   const checkCollision = useCallback((a: GameObject, b: GameObject): boolean => {
@@ -439,7 +921,11 @@ function useSpaceShooter() {
 // Space Shooter Game Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function SpaceShooterGame() {
+interface SpaceShooterProps {
+  onExit: () => void;
+}
+
+function SpaceShooterGame({ onExit }: SpaceShooterProps) {
   const {
     screenSize,
     gameState,
@@ -451,7 +937,7 @@ export default function SpaceShooterGame() {
     explosions,
     stars,
     restartGame
-  } = useSpaceShooter();
+  } = useSpaceShooter(onExit);
 
   const { width: W, height: H } = screenSize;
 
@@ -692,4 +1178,33 @@ export default function SpaceShooterGame() {
       )}
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main App Component
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [currentGame, setCurrentGame] = useState<string>('menu');
+
+  const handleGameSelect = (game: string) => {
+    setCurrentGame(game);
+  };
+
+  const handleExit = () => {
+    setCurrentGame('menu');
+  };
+
+  switch (currentGame) {
+    case 'spaceshooter':
+      return <SpaceShooterGame onExit={handleExit} />;
+    case 'bouncingball':
+      return <BouncingBallGame onExit={handleExit} />;
+    case 'playermovement':
+      return <PlayerMovementGame onExit={handleExit} />;
+    case 'staticscene':
+      return <StaticSceneGame onExit={handleExit} />;
+    default:
+      return <GameMenu onGameSelect={handleGameSelect} />;
+  }
 }
