@@ -6,6 +6,7 @@ import PlayerMovementGame from './components/PlayerMovementGame';
 import StaticSceneGame from './components/StaticSceneGame';
 import DungeonGame from './components/DungeonGame';
 import CarGame from './components/CarGame';
+import Nexus2500Game from './components/Nexus2500Game';
 
 export default function App() {
   const [currentGame, setCurrentGame] = useState<string>('menu');
@@ -14,6 +15,8 @@ export default function App() {
   const handleExit = () => setCurrentGame('menu');
 
   switch (currentGame) {
+    case 'nexus2500':
+      return <Nexus2500Game onExit={handleExit} />;
     case 'carrace':
       return <CarGame onExit={handleExit} />;
     case 'dungeon':

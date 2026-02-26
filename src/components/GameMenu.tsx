@@ -10,6 +10,7 @@ interface MenuProps {
 }
 
 const games = [
+  { id: 'nexus2500', title: 'NEXUS 2500: The Last Signal', description: '25th century epic — 5 chapters, bosses, full storyline. Humanity\'s last hope!' },
   { id: 'carrace', title: 'Nitro Highway', description: 'Endless police chase racing - dodge traffic, nitro boost, wanted levels!' },
   { id: 'dungeon', title: 'Dungeon of Shadows', description: 'Roguelike dungeon crawler - procedural dungeons, bosses & loot!' },
   { id: 'spaceshooter', title: 'Space Shooter', description: 'Full combat game with enemies and power-ups' },
@@ -44,7 +45,7 @@ export default function GameMenu({ onGameSelect }: MenuProps) {
       } else if (e.key === 'Enter') {
         onGameSelect(games[selectedIndex].id);
         e.preventDefault();
-      } else if (e.key >= '1' && e.key <= '6') {
+      } else if (e.key >= '1' && e.key <= '7') {
         const gameIndex = parseInt(e.key) - 1;
         if (gameIndex < games.length) {
           setSelectedIndex(gameIndex);
@@ -144,7 +145,7 @@ export default function GameMenu({ onGameSelect }: MenuProps) {
 
         {/* Instructions */}
         <PivotLabel
-          text="↑↓ Arrow Keys: Navigate | Enter: Select | 1-6: Quick Select | ESC: Return to Menu"
+          text="↑↓ Arrow Keys: Navigate | Enter: Select | 1-7: Quick Select | ESC: Return to Menu"
           position={{ x: screenSize.width / 2, y: screenSize.height - 50 }}
           font="18px Arial"
           fill="#888"
