@@ -10,6 +10,7 @@ interface MenuProps {
 }
 
 const games = [
+  { id: 'dungeon', title: 'Dungeon of Shadows', description: 'Roguelike dungeon crawler - procedural dungeons, bosses & loot!' },
   { id: 'spaceshooter', title: 'Space Shooter', description: 'Full combat game with enemies and power-ups' },
   { id: 'bouncingball', title: 'Bouncing Ball', description: 'Physics animation demo' },
   { id: 'playermovement', title: 'Player Movement', description: 'Keyboard controlled character' },
@@ -42,7 +43,7 @@ export default function GameMenu({ onGameSelect }: MenuProps) {
       } else if (e.key === 'Enter') {
         onGameSelect(games[selectedIndex].id);
         e.preventDefault();
-      } else if (e.key >= '1' && e.key <= '4') {
+      } else if (e.key >= '1' && e.key <= '5') {
         const gameIndex = parseInt(e.key) - 1;
         if (gameIndex < games.length) {
           setSelectedIndex(gameIndex);
@@ -87,9 +88,9 @@ export default function GameMenu({ onGameSelect }: MenuProps) {
 
         {/* Menu Items */}
         {games.map((game, index) => {
-          const y = 200 + index * 120;
-          const buttonWidth = 400;
-          const buttonHeight = 80;
+          const y = 180 + index * 100;
+          const buttonWidth = 500;
+          const buttonHeight = 75;
           const x = (screenSize.width - buttonWidth) / 2;
           const isSelected = index === selectedIndex;
 
@@ -142,7 +143,7 @@ export default function GameMenu({ onGameSelect }: MenuProps) {
 
         {/* Instructions */}
         <PivotLabel
-          text="↑↓ Arrow Keys: Navigate | Enter: Select | 1-4: Quick Select | ESC: Return to Menu"
+          text="↑↓ Arrow Keys: Navigate | Enter: Select | 1-5: Quick Select | ESC: Return to Menu"
           position={{ x: screenSize.width / 2, y: screenSize.height - 50 }}
           font="18px Arial"
           fill="#888"
