@@ -5,6 +5,7 @@ import BouncingBallGame from './components/BouncingBallGame';
 import PlayerMovementGame from './components/PlayerMovementGame';
 import StaticSceneGame from './components/StaticSceneGame';
 import DungeonGame from './components/DungeonGame';
+import CarGame from './components/CarGame';
 
 export default function App() {
   const [currentGame, setCurrentGame] = useState<string>('menu');
@@ -13,6 +14,8 @@ export default function App() {
   const handleExit = () => setCurrentGame('menu');
 
   switch (currentGame) {
+    case 'carrace':
+      return <CarGame onExit={handleExit} />;
     case 'dungeon':
       return <DungeonGame onExit={handleExit} />;
     case 'spaceshooter':
