@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   PivotCanvas,
   PivotRectangle,
   PivotLabel,
 } from 'pivotx/react';
-
-interface MenuProps {
-  onGameSelect: (game: string) => void;
-}
 
 const games = [
   { id: 'nexus2500', title: 'NEXUS 2500: The Last Signal', description: '25th century epic — 5 chapters, bosses, full storyline. Humanity\'s last hope!' },
@@ -19,7 +16,9 @@ const games = [
   { id: 'staticscene', title: 'Static Scene', description: 'Beautiful landscape render' }
 ];
 
-export default function GameMenu({ onGameSelect }: MenuProps) {
+export default function GameMenu() {
+  const navigate = useNavigate();
+
   const [screenSize, setScreenSize] = useState({ 
     width: window.innerWidth, 
     height: window.innerHeight 
@@ -43,20 +42,21 @@ export default function GameMenu({ onGameSelect }: MenuProps) {
         setSelectedIndex(prev => prev < games.length - 1 ? prev + 1 : 0);
         e.preventDefault();
       } else if (e.key === 'Enter') {
-        onGameSelect(games[selectedIndex].id);
+        navigate(`/game/${games[selectedIndex].id}`);
         e.preventDefault();
       } else if (e.key >= '1' && e.key <= '7') {
         const gameIndex = parseInt(e.key) - 1;
         if (gameIndex < games.length) {
           setSelectedIndex(gameIndex);
-          onGameSelect(games[gameIndex].id);
+          navigate(`/game/${games[gameIndex].id}`);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onGameSelect, selectedIndex]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex]);
 
   return (
     <div style={{ 

@@ -34,6 +34,7 @@ import {
   PivotLine,
   useGameLoop,
 } from 'pivotx/react';
+import { useExitToMenu } from '../../hooks/useExitToMenu';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -1053,9 +1054,8 @@ function useNexus2500(onExit: () => void) {
 // RENDERER COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface Props { onExit: () => void; }
-
-export default function Nexus2500Game({ onExit }: Props) {
+export default function Nexus2500Game() {
+  const onExit = useExitToMenu();
   const {
     screenSize, gameState, player, enemies, bullets, particles,
     powerUps, explosions, stars, nebulae,

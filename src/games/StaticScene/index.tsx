@@ -5,12 +5,10 @@ import {
   PivotRectangle,
   PivotLabel,
 } from 'pivotx/react';
+import { useExitToMenu } from '../../hooks/useExitToMenu';
 
-interface StaticSceneProps {
-  onExit: () => void;
-}
-
-export default function StaticSceneGame({ onExit }: StaticSceneProps) {
+export default function StaticSceneGame() {
+  const onExit = useExitToMenu();
   const [screenSize, setScreenSize] = useState({ 
     width: window.innerWidth, 
     height: window.innerHeight 

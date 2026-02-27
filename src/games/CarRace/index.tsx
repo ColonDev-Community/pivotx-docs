@@ -26,6 +26,7 @@ import {
   PivotLine,
   useGameLoop,
 } from 'pivotx/react';
+import { useExitToMenu } from '../../hooks/useExitToMenu';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -707,11 +708,8 @@ function useCarGame(onExit: () => void) {
 // Renderer
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface CarGameProps {
-  onExit: () => void;
-}
-
-export default function CarGame({ onExit }: CarGameProps) {
+export default function CarGame() {
+  const onExit = useExitToMenu();
   const {
     screenSize, gameState: gs, player, traffic, police, pickups,
     bullets, particles, decor, tireMarks, roadLines, roadLeft,

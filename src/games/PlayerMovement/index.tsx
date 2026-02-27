@@ -5,12 +5,10 @@ import {
   PivotLabel,
   useGameLoop,
 } from 'pivotx/react';
+import { useExitToMenu } from '../../hooks/useExitToMenu';
 
-interface PlayerMovementProps {
-  onExit: () => void;
-}
-
-export default function PlayerMovementGame({ onExit }: PlayerMovementProps) {
+export default function PlayerMovementGame() {
+  const onExit = useExitToMenu();
   const [screenSize, setScreenSize] = useState({ 
     width: window.innerWidth, 
     height: window.innerHeight 

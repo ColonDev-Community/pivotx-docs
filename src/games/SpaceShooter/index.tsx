@@ -6,6 +6,7 @@ import {
   PivotLabel,
   useGameLoop,
 } from 'pivotx/react';
+import { useExitToMenu } from '../../hooks/useExitToMenu';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -340,11 +341,8 @@ function useSpaceShooter(onExit: () => void) {
 // Space Shooter Game Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface SpaceShooterProps {
-  onExit: () => void;
-}
-
-export default function SpaceShooterGame({ onExit }: SpaceShooterProps) {
+export default function SpaceShooterGame() {
+  const onExit = useExitToMenu();
   const {
     screenSize, gameState, player, bullets, enemyBullets,
     enemies, powerUps, explosions, stars, restartGame

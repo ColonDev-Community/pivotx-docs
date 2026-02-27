@@ -22,6 +22,7 @@ import {
   PivotLine,
   useGameLoop,
 } from 'pivotx/react';
+import { useExitToMenu } from '../../hooks/useExitToMenu';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1005,11 +1006,8 @@ function useDungeonGame(onExit: () => void) {
 // Renderer
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface DungeonGameProps {
-  onExit: () => void;
-}
-
-export default function DungeonGame({ onExit }: DungeonGameProps) {
+export default function DungeonGame() {
+  const onExit = useExitToMenu();
   const {
     screenSize, gameData, player, camera, dungeon,
     enemies, bullets, loot, particles, mouse,

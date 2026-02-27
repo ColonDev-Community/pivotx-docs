@@ -6,12 +6,10 @@ import {
   PivotLabel,
   useGameLoop,
 } from 'pivotx/react';
+import { useExitToMenu } from '../../hooks/useExitToMenu';
 
-interface BouncingBallProps {
-  onExit: () => void;
-}
-
-export default function BouncingBallGame({ onExit }: BouncingBallProps) {
+export default function BouncingBallGame() {
+  const onExit = useExitToMenu();
   const [screenSize, setScreenSize] = useState({ 
     width: window.innerWidth, 
     height: window.innerHeight 

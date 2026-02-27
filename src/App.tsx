@@ -1,36 +1,25 @@
-import { useState } from 'react';
-import GameMenu from './components/GameMenu';
-import SpaceShooterGame from './components/SpaceShooterGame';
-import BouncingBallGame from './components/BouncingBallGame';
-import PlayerMovementGame from './components/PlayerMovementGame';
-import StaticSceneGame from './components/StaticSceneGame';
-import DungeonGame from './components/DungeonGame';
-import CarGame from './components/CarGame';
-import Nexus2500Game from './components/Nexus2500Game';
+import { Routes, Route } from 'react-router-dom';
+import GameMenu from './pages/GameMenu';
+import SpaceShooterGame from './games/SpaceShooter';
+import BouncingBallGame from './games/BouncingBall';
+import PlayerMovementGame from './games/PlayerMovement';
+import StaticSceneGame from './games/StaticScene';
+import DungeonGame from './games/Dungeon';
+import CarGame from './games/CarRace';
+import Nexus2500Game from './games/Nexus2500';
 
 export default function App() {
-  const [currentGame, setCurrentGame] = useState<string>('menu');
-
-  const handleGameSelect = (game: string) => setCurrentGame(game);
-  const handleExit = () => setCurrentGame('menu');
-
-  switch (currentGame) {
-    case 'nexus2500':
-      return <Nexus2500Game onExit={handleExit} />;
-    case 'carrace':
-      return <CarGame onExit={handleExit} />;
-    case 'dungeon':
-      return <DungeonGame onExit={handleExit} />;
-    case 'spaceshooter':
-      return <SpaceShooterGame onExit={handleExit} />;
-    case 'bouncingball':
-      return <BouncingBallGame onExit={handleExit} />;
-    case 'playermovement':
-      return <PlayerMovementGame onExit={handleExit} />;
-    case 'staticscene':
-      return <StaticSceneGame onExit={handleExit} />;
-    default:
-      return <GameMenu onGameSelect={handleGameSelect} />;
-  }
+  return (
+    <Routes>
+      <Route path="/" element={<GameMenu />} />
+      <Route path="/game/nexus2500" element={<Nexus2500Game />} />
+      <Route path="/game/carrace" element={<CarGame />} />
+      <Route path="/game/dungeon" element={<DungeonGame />} />
+      <Route path="/game/spaceshooter" element={<SpaceShooterGame />} />
+      <Route path="/game/bouncingball" element={<BouncingBallGame />} />
+      <Route path="/game/playermovement" element={<PlayerMovementGame />} />
+      <Route path="/game/staticscene" element={<StaticSceneGame />} />
+    </Routes>
+  );
 }
 
