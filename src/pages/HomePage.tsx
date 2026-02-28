@@ -1,0 +1,266 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { GAME_TUTORIALS } from '../data/gameTutorials';
+
+const navBtnStyle = (active: boolean): React.CSSProperties => ({
+  padding: '10px 20px',
+  fontSize: '0.95rem',
+  background: active ? '#00ccff22' : 'transparent',
+  border: `1px solid ${active ? '#00ccff' : '#444'}`,
+  borderRadius: 8,
+  color: active ? '#00ccff' : '#aaa',
+  cursor: 'pointer',
+  fontWeight: active ? 700 : 400,
+  transition: 'all 0.2s',
+});
+
+export default function HomePage() {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredGames = GAME_TUTORIALS.filter(game =>
+    game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    game.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    game.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const difficultyColor = (d: string) => {
+    switch (d) {
+      case 'beginner': return '#44ff88';
+      case 'intermediate': return '#ffaa44';
+      case 'advanced': return '#ff4466';
+      default: return '#888';
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0a0a1a 100%)',
+      color: '#fff',
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+    }}>
+      {/* Header */}
+      <header style={{
+        padding: '40px 20px 20px',
+        textAlign: 'center',
+        borderBottom: '1px solid #333',
+      }}>
+        <h1 style={{
+          fontSize: '3rem',
+          fontWeight: 800,
+          background: 'linear-gradient(90deg, #00ccff, #aa66ff, #ff6699)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          margin: 0,
+        }}>
+          pIvotX
+        </h1>
+        <p style={{ color: '#888', fontSize: '1.2rem', marginTop: 8 }}>
+          Declarative 2D Game Engine for React — Learn by Building Games
+        </p>
+
+        {/* Navigation */}
+        <nav style={{ marginTop: 20, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button onClick={() => navigate('/')} style={navBtnStyle(true)}>
+            Home
+          </button>
+          <button onClick={() => navigate('/docs')} style={navBtnStyle(false)}>
+            Documentation
+          </button>
+          <button onClick={() => navigate('/tutorials')} style={navBtnStyle(false)}>
+            Game Tutorials
+          </button>
+        </nav>
+      </header>
+
+      {/* Search */}
+      <div style={{ maxWidth: 700, margin: '30px auto', padding: '0 20px' }}>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            placeholder="Search games, features, concepts..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '14px 20px',
+              fontSize: '1rem',
+              background: '#1a1a2e',
+              border: '2px solid #333',
+              borderRadius: 12,
+              color: '#fff',
+              outline: 'none',
+              boxSizing: 'border-box',
+              transition: 'border-color 0.2s',
+            }}
+            onFocus={e => e.target.style.borderColor = '#00ccff'}
+            onBlur={e => e.target.style.borderColor = '#333'}
+          />
+        </div>
+      </div>
+
+      {/* Features */}
+      <section style={{ maxWidth: 1000, margin: '0 auto 40px', padding: '0 20px' }}>
+        <h2 style={{ fontSize: '1.8rem', textAlign: 'center', color: '#ddd' }}>
+          Why PivotX?
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginTop: 20 }}>
+          {[
+            { icon: '\u269B\uFE0F', title: 'React-Native API', desc: 'Build games with familiar JSX components \u2014 no imperative canvas code.' },
+            { icon: '\uD83D\uDD04', title: 'useGameLoop Hook', desc: 'Accurate delta-time game loop that auto-manages lifecycle.' },
+            { icon: '\uD83D\uDCD0', title: 'Declarative Shapes', desc: 'PivotRectangle, PivotCircle, PivotLabel, PivotLine \u2014 compose scenes visually.' },
+            { icon: '\uD83C\uDFA8', title: 'Zero Config', desc: 'No webpack plugins or build config. Just import and go.' },
+            { icon: '\uD83D\uDCF1', title: 'Responsive', desc: 'Canvases resize with the window. Positions can be percentage-based.' },
+            { icon: '\uD83E\uDDE9', title: 'TypeScript First', desc: 'Full type definitions for every component and hook.' },
+          ].map((f, i) => (
+            <div key={i} style={{
+              background: '#1a1a2e',
+              border: '1px solid #333',
+              borderRadius: 12,
+              padding: 24,
+              transition: 'border-color 0.2s, transform 0.2s',
+              cursor: 'default',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#00ccff'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              <div style={{ fontSize: '2rem', marginBottom: 10 }}>{f.icon}</div>
+              <h3 style={{ margin: '0 0 8px', color: '#fff' }}>{f.title}</h3>
+              <p style={{ margin: 0, color: '#999', fontSize: '0.9rem', lineHeight: 1.5 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Game Tutorials Grid */}
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px 60px' }}>
+        <h2 style={{ fontSize: '1.8rem', textAlign: 'center', color: '#ddd', marginBottom: 10 }}>
+          Learn by Building
+        </h2>
+        <p style={{ textAlign: 'center', color: '#888', marginBottom: 30 }}>
+          {filteredGames.length} game{filteredGames.length !== 1 ? 's' : ''} — from simple animations to full RPGs
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 20 }}>
+          {filteredGames.map(game => (
+            <div
+              key={game.id}
+              onClick={() => navigate(`/tutorial/${game.id}`)}
+              style={{
+                background: '#12122a',
+                border: '1px solid #2a2a4a',
+                borderRadius: 12,
+                padding: 24,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#00ccff';
+                e.currentTarget.style.transform = 'translateY(-3px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,204,255,0.15)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = '#2a2a4a';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#fff' }}>{game.title}</h3>
+                <span style={{
+                  fontSize: '0.75rem',
+                  padding: '3px 10px',
+                  borderRadius: 20,
+                  background: `${difficultyColor(game.difficulty)}22`,
+                  color: difficultyColor(game.difficulty),
+                  border: `1px solid ${difficultyColor(game.difficulty)}44`,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}>
+                  {game.difficulty}
+                </span>
+              </div>
+              <p style={{ margin: '0 0 12px', color: '#999', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                {game.description}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {game.tags.slice(0, 5).map(tag => (
+                  <span key={tag} style={{
+                    fontSize: '0.7rem',
+                    padding: '2px 8px',
+                    background: '#1a1a3e',
+                    borderRadius: 6,
+                    color: '#aaa',
+                    border: '1px solid #333',
+                  }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                  {game.codeBreakdown.length} code sections
+                </span>
+                <span style={{ fontSize: '0.85rem', color: '#00ccff' }}>
+                  View Tutorial →
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredGames.length === 0 && (
+          <p style={{ textAlign: 'center', color: '#666', padding: 40 }}>
+            No games match "{searchQuery}". Try different keywords.
+          </p>
+        )}
+      </section>
+
+      {/* Quick Start */}
+      <section style={{
+        background: '#0d0d20',
+        borderTop: '1px solid #222',
+        padding: '40px 20px',
+      }}>
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          <h2 style={{ textAlign: 'center', color: '#ddd' }}>Quick Start</h2>
+          <pre style={{
+            background: '#1a1a2e',
+            border: '1px solid #333',
+            borderRadius: 8,
+            padding: 20,
+            overflow: 'auto',
+            fontSize: '0.9rem',
+            lineHeight: 1.6,
+          }}>
+            <code style={{ color: '#ddd' }}>
+{`npm install pivotx
+
+import { PivotCanvas, PivotCircle, useGameLoop } from 'pivotx/react';
+
+function MyGame() {
+  const ball = useRef({ x: 100, y: 100, vx: 200, vy: 150 });
+  const [, setTick] = useState(0);
+
+  useGameLoop((dt) => {
+    ball.current.x += ball.current.vx * dt;
+    ball.current.y += ball.current.vy * dt;
+    setTick(t => t + 1);
+  });
+
+  return (
+    <PivotCanvas width={800} height={600} background="#111">
+      <PivotCircle
+        center={{ x: ball.current.x, y: ball.current.y }}
+        radius={20} fill="#e94560" />
+    </PivotCanvas>
+  );
+}`}
+            </code>
+          </pre>
+        </div>
+      </section>
+    </div>
+  );
+}
