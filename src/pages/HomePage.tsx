@@ -14,9 +14,12 @@ const navBtnStyle = (active: boolean): React.CSSProperties => ({
   transition: 'all 0.2s',
 });
 
+type QuickStartTab = 'vanilla' | 'typescript' | 'react';
+
 export default function HomePage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [quickStartTab, setQuickStartTab] = useState<QuickStartTab>('vanilla');
 
   const filteredGames = GAME_TUTORIALS.filter(game =>
     game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -57,7 +60,7 @@ export default function HomePage() {
           pIvotX
         </h1>
         <p style={{ color: '#888', fontSize: '1.2rem', marginTop: 8 }}>
-          Declarative 2D Game Engine for React — Learn by Building Games
+          Lightweight 2D Game Library — Vanilla JS · TypeScript · React
         </p>
 
         {/* Navigation */}
@@ -107,12 +110,12 @@ export default function HomePage() {
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginTop: 20 }}>
           {[
-            { icon: '\u269B\uFE0F', title: 'React-Native API', desc: 'Build games with familiar JSX components \u2014 no imperative canvas code.' },
-            { icon: '\uD83D\uDD04', title: 'useGameLoop Hook', desc: 'Accurate delta-time game loop that auto-manages lifecycle.' },
-            { icon: '\uD83D\uDCD0', title: 'Declarative Shapes', desc: 'PivotRectangle, PivotCircle, PivotLabel, PivotLine \u2014 compose scenes visually.' },
-            { icon: '\uD83C\uDFA8', title: 'Zero Config', desc: 'No webpack plugins or build config. Just import and go.' },
-            { icon: '\uD83D\uDCF1', title: 'Responsive', desc: 'Canvases resize with the window. Positions can be percentage-based.' },
-            { icon: '\uD83E\uDDE9', title: 'TypeScript First', desc: 'Full type definitions for every component and hook.' },
+            { icon: '\uD83C\uDF10', title: 'Use Anywhere', desc: 'Vanilla JS via CDN, TypeScript ESM, or React components \u2014 one library, three ways.' },
+            { icon: '\uD83D\uDD04', title: 'Game Loop Built-In', desc: 'canvas.startLoop(fn) or useGameLoop(fn) \u2014 delta-time loop with one call.' },
+            { icon: '\uD83D\uDCD0', title: 'Simple Shape API', desc: 'Circle, Rectangle, Line, Label \u2014 create shapes and add() to canvas.' },
+            { icon: '\uD83C\uDFA8', title: 'Zero Config', desc: 'Drop a <script> tag for Vanilla JS, or npm install for TypeScript/React.' },
+            { icon: '\u269B\uFE0F', title: 'React Layer', desc: 'Declarative PivotCanvas, PivotCircle, PivotLabel components + useGameLoop hook.' },
+            { icon: '\uD83E\uDDE9', title: 'TypeScript First', desc: 'Full type definitions: IPoint, IDrawable, IShape, LoopCallback & more.' },
           ].map((f, i) => (
             <div key={i} style={{
               background: '#1a1a2e',
@@ -225,6 +228,27 @@ export default function HomePage() {
       }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
           <h2 style={{ textAlign: 'center', color: '#ddd' }}>Quick Start</h2>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 16 }}>
+            {(['vanilla', 'typescript', 'react'] as QuickStartTab[]).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setQuickStartTab(tab)}
+                style={{
+                  padding: '8px 18px',
+                  fontSize: '0.85rem',
+                  background: quickStartTab === tab ? '#00ccff22' : 'transparent',
+                  border: `1px solid ${quickStartTab === tab ? '#00ccff' : '#444'}`,
+                  borderRadius: 6,
+                  color: quickStartTab === tab ? '#00ccff' : '#aaa',
+                  cursor: 'pointer',
+                  fontWeight: quickStartTab === tab ? 700 : 400,
+                  textTransform: 'capitalize',
+                }}
+              >
+                {tab === 'vanilla' ? 'Vanilla JS' : tab === 'typescript' ? 'TypeScript' : 'React'}
+              </button>
+            ))}
+          </div>
           <pre style={{
             background: '#1a1a2e',
             border: '1px solid #333',
@@ -235,22 +259,66 @@ export default function HomePage() {
             lineHeight: 1.6,
           }}>
             <code style={{ color: '#ddd' }}>
-{`npm install pivotx
+{quickStartTab === 'vanilla' ? `<!-- No npm required — just a <script> tag -->
+<canvas id="game" width="600" height="400"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/pivotx/dist/pivotx.umd.min.js"></script>
+<script>
+  var { Canvas, Circle, Point } = PivotX;
+  var canvas = new Canvas("game");
 
-import { PivotCanvas, PivotCircle, useGameLoop } from 'pivotx/react';
+  var ball = { x: 300, y: 200, vx: 200, vy: 150, r: 20 };
+
+  canvas.startLoop(function(dt) {
+    canvas.clear();
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    if (ball.x < ball.r || ball.x > 600 - ball.r) ball.vx *= -1;
+    if (ball.y < ball.r || ball.y > 400 - ball.r) ball.vy *= -1;
+
+    var c = new Circle(Point(ball.x, ball.y), ball.r);
+    c.fillColor = "#e94560";
+    canvas.add(c);
+  });
+</script>` : quickStartTab === 'typescript' ? `import { Canvas, Circle, Point } from 'pivotx';
+
+const canvas = new Canvas('game');
+
+interface Ball {
+  x: number; y: number;
+  vx: number; vy: number;
+  r: number;
+}
+
+const ball: Ball = { x: 300, y: 200, vx: 200, vy: 150, r: 20 };
+
+canvas.startLoop((dt: number) => {
+  canvas.clear();
+  ball.x += ball.vx * dt;
+  ball.y += ball.vy * dt;
+  if (ball.x < ball.r || ball.x > 600 - ball.r) ball.vx *= -1;
+  if (ball.y < ball.r || ball.y > 400 - ball.r) ball.vy *= -1;
+
+  const c = new Circle(Point(ball.x, ball.y), ball.r);
+  c.fillColor = '#e94560';
+  canvas.add(c);
+});` : `import { PivotCanvas, PivotCircle, useGameLoop } from 'pivotx/react';
+import { useRef, useState } from 'react';
 
 function MyGame() {
-  const ball = useRef({ x: 100, y: 100, vx: 200, vy: 150 });
+  const ball = useRef({ x: 300, y: 200, vx: 200, vy: 150 });
   const [, setTick] = useState(0);
 
   useGameLoop((dt) => {
-    ball.current.x += ball.current.vx * dt;
-    ball.current.y += ball.current.vy * dt;
+    const b = ball.current;
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    if (b.x < 20 || b.x > 580) b.vx *= -1;
+    if (b.y < 20 || b.y > 380) b.vy *= -1;
     setTick(t => t + 1);
   });
 
   return (
-    <PivotCanvas width={800} height={600} background="#111">
+    <PivotCanvas width={600} height={400} background="#111">
       <PivotCircle
         center={{ x: ball.current.x, y: ball.current.y }}
         radius={20} fill="#e94560" />
