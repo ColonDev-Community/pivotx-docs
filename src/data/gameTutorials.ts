@@ -833,4 +833,306 @@ let charCount = 0;
       },
     ],
   },
+  {
+    id: 'aetherdrift',
+    title: 'Aetherdrift',
+    description: 'A full-featured side-scrolling platformer with 3 realms, 5 enemy types, 3 boss fights, wall-jumping, dashing, and a 3-hit combo system. Inspired by Hollow Knight, Super Mario, and Sonic.',
+    difficulty: 'advanced',
+    tags: ['platformer', 'combat', 'boss fights', 'procedural generation', 'particles', 'camera', 'modular architecture'],
+    features: [
+      'Coyote time & jump buffering for responsive platforming',
+      'Variable jump height, double jump, wall slide & wall jump',
+      'Invincible dash with cooldown',
+      '3-hit sword combo with directional knockback',
+      '5 enemy types with unique AI behaviors (patrol, fly sine, fly chase, teleport)',
+      '3 multi-phase boss fights (Stone Colossus, Infernal Drake, Aether Devourer)',
+      'Procedurally generated levels per realm',
+      'Moving & breakable platforms, spike hazards',
+      'Collectible Chrono Shards & health pickups',
+      'Particle effects: jump dust, dash trail, hit sparks, death burst',
+      'Smooth camera follow with look-ahead & screen shake',
+      'Parallax scrolling background layers',
+      'Full HUD: health hearts, shard counter, score, dash cooldown',
+      'Modular architecture: 14 files across 7 sub-folders',
+    ],
+    route: '/game/aetherdrift',
+    conceptsCovered: [
+      'Modular game architecture with sub-folders',
+      'Custom physics: gravity, AABB collision, resolution',
+      'Platformer movement: coyote time, jump buffering, variable height',
+      'Entity-Component pattern (Player, Enemy, Boss entities)',
+      'Factory functions for game objects',
+      'Camera system with smooth follow and screen shake',
+      'Particle system with multiple spawner types',
+      'Combat system: hitbox-based attacks, knockback, combos',
+      'Procedural level generation',
+      'Boss fight state machines with phase transitions',
+      'Game phase management (title, playing, boss, victory)',
+      'Frustum culling for performance',
+      'Parallax scrolling backgrounds',
+    ],
+    codeBreakdown: [
+      {
+        title: '1. Project Structure',
+        description: 'Aetherdrift is split into 14 files across 7 sub-folders. Each system is isolated and testable. The main hook orchestrates all systems, and the index.tsx handles rendering.',
+        code: `// src/games/Aetherdrift/
+// ├── index.tsx              — Entry point & PivotX rendering
+// ├── types/index.ts         — All TypeScript interfaces
+// ├── constants/index.ts     — Physics, player stats, realm definitions
+// ├── entities/
+// │   ├── Player.ts          — Player factory, movement, attack logic
+// │   └── enemies.ts         — Enemy factory, AI behaviors, boss logic
+// ├── objects/
+// │   ├── platforms.ts       — Platform creation & update (moving/breakable)
+// │   └── collectibles.ts    — Chrono shards, health pickups
+// ├── systems/
+// │   ├── physics.ts         — AABB collision, resolution, math helpers
+// │   ├── camera.ts          — Smooth follow, screen shake
+// │   ├── particles.ts       — Particle spawners & update
+// │   └── combat.ts          — Attack resolution, projectile system
+// ├── levels/
+// │   └── generator.ts       — Procedural level generation
+// └── hooks/
+//     └── useAetherdrift.ts   — Main game hook`,
+        language: 'text',
+      },
+      {
+        title: '2. Types & Constants',
+        description: 'Every entity, system, and game object has a well-defined TypeScript interface. Constants define all tunable game parameters — physics, player stats, enemy templates, boss templates, and realm configurations.',
+        code: `// types/index.ts — Core entity interfaces
+interface PlayerState extends Entity {
+  health: number; maxHealth: number;
+  speed: number; jumpForce: number;
+  isGrounded: boolean; isWallSliding: boolean;
+  wallDir: number;
+  canDoubleJump: boolean; hasDoubleJumped: boolean;
+  coyoteTimer: number; jumpBufferTimer: number;
+  isDashing: boolean; dashCooldown: number;
+  isAttacking: boolean; attackCombo: number;
+  invincibleTimer: number; knockbackTimer: number;
+  chronoShards: number; totalKills: number;
+}
+
+// constants/index.ts — Realm definitions
+const REALMS: Realm[] = [
+  {
+    id: 0, name: 'Sky Ruins',
+    subtitle: 'The Crumbling Heights',
+    bgGradient: ['#0b1628', '#152244', '#1e3a5f'],
+    platformColor: '#4a6a8a',
+    enemyTypes: ['sprite', 'crawler'],
+    bossType: 'colossus',
+    levelWidth: 4500, difficulty: 1,
+  },
+  // ... Ember Depths, Void Spire
+];`,
+        language: 'tsx',
+      },
+      {
+        title: '3. Platformer Physics',
+        description: 'The player movement system implements coyote time (jump grace period after leaving a ledge), jump buffering (queue a jump slightly before landing), variable jump height (release to cut jump short), and wall mechanics.',
+        code: `// entities/Player.ts — Movement system
+
+// Coyote time: allows jumping briefly after walking off a platform
+if (wasGrounded && !p.isGrounded) {
+  p.coyoteTimer = COYOTE_TIME; // 0.1 seconds
+}
+
+const canJump = p.isGrounded || p.coyoteTimer > 0;
+const wantsJump = p.jumpBufferTimer > 0;
+
+if (wantsJump && canJump) {
+  p.vy = p.jumpForce;         // -560
+  p.isGrounded = false;
+  p.coyoteTimer = 0;
+  p.jumpBufferTimer = 0;
+} else if (wantsJump && p.isWallSliding) {
+  // Wall jump — push away from wall
+  p.vx = -p.wallDir * WALL_JUMP_FORCE_X; // 360
+  p.vy = WALL_JUMP_FORCE_Y;              // -500
+  p.facingRight = p.wallDir < 0;
+} else if (jumpPressed && !p.isGrounded && !p.hasDoubleJumped) {
+  // Double jump
+  p.vy = p.jumpForce * 0.85;
+  p.hasDoubleJumped = true;
+}
+
+// Variable jump height — cut velocity when button released
+if (jumpReleased && p.vy < 0) {
+  p.vy *= VARIABLE_JUMP_MULTIPLIER; // 0.45
+}`,
+        language: 'tsx',
+      },
+      {
+        title: '4. Enemy AI Behaviors',
+        description: 'Five enemy types with distinct AI: Sprites float in sine waves, Crawlers patrol and chase, Fire Wisps fly toward the player, Magma Slugs patrol and shoot, Void Shades teleport near the player.',
+        code: `// entities/enemies.ts — AI switches
+
+switch (e.behavior) {
+  case 'patrol': {
+    // Chase if player is near, otherwise walk back and forth
+    if (dist < e.detectionRange) {
+      e.vx = Math.sign(dx) * e.speed * 1.3;
+    } else {
+      e.vx = e.patrolDir * e.speed;
+      if (Math.abs(e.x - e.spawnX) > e.patrolRange) {
+        e.patrolDir *= -1;
+      }
+    }
+    break;
+  }
+  case 'fly_chase': {
+    // Fly directly toward player
+    const angle = Math.atan2(playerCY - eCY, playerCX - eCX);
+    e.vx = Math.cos(angle) * e.speed;
+    e.vy = Math.sin(angle) * e.speed;
+    break;
+  }
+  case 'teleport': {
+    // Void shade: teleport near player periodically
+    if (timeSinceLastAttack >= e.attackCooldown) {
+      const side = Math.random() > 0.5 ? 1 : -1;
+      e.x = player.x + side * 80;
+      e.vx = -side * e.speed * 1.5;
+    }
+    break;
+  }
+}`,
+        language: 'tsx',
+      },
+      {
+        title: '5. Boss Fight State Machine',
+        description: 'Each boss has multiple phases triggered by health thresholds. The Stone Colossus ground-slams and charges. The Infernal Drake sprays fire and dashes. The Aether Devourer teleports, fires void beams, and launches projectile rings.',
+        code: `// entities/enemies.ts — Boss phase transitions
+
+const healthPct = boss.health / boss.maxHealth;
+if (healthPct <= 0.5 && boss.phase === 0) {
+  boss.phase = 1;
+  boss.invincibleTimer = 1.0; // brief invincibility on phase change
+}
+if (healthPct <= 0.2 && boss.phase === 1) {
+  boss.phase = 2;
+}
+
+// Colossus attack patterns
+if (boss.attackPattern === 0) {
+  // Ground slam — shockwave
+  boss.shockwaveTimer = 0.3;
+  boss.vy = -200; // jump before slam
+} else if (boss.attackPattern === 1) {
+  // Charge at player
+  boss.vx = Math.sign(dx) * 400;
+  boss.isCharging = true;
+} else if (boss.phase >= 1) {
+  // Phase 2: falling rocks
+  for (let i = 0; i < 3; i++) {
+    projectiles.push(createProjectile(
+      player.x + (i - 1) * 80, player.y - 400,
+      0, 300, boss.damage, '#aaccee', false
+    ));
+  }
+}`,
+        language: 'tsx',
+      },
+      {
+        title: '6. Level Generation',
+        description: 'Each realm is procedurally generated with ground segments (with gaps), floating platforms, moving platforms, breakable platforms, spike hazards, enemies, collectibles, and a boss room at the end.',
+        code: `// levels/generator.ts — Procedural generation
+
+// Ground segments with gaps
+while (gx < levelWidth - 400) {
+  const segLen = 200 + Math.random() * 300;
+  platforms.push(createGroundSegment(gx, groundY, segLen, ...));
+
+  // Floating platform over gaps
+  if (Math.random() < 0.7) {
+    platforms.push(createPlatform(
+      gx + gapLen / 2, groundY - 40 - Math.random() * 60,
+      60 + Math.random() * 60, 16, 'solid', ...
+    ));
+  }
+  gx += segLen + gap;
+}
+
+// Higher route platforms
+for (let i = 0; i < floatCount; i++) {
+  const isMoving = Math.random() < 0.2 + realm.difficulty * 0.05;
+  const type = isMoving
+    ? (Math.random() > 0.5 ? 'moving_h' : 'moving_v')
+    : 'solid';
+  // ...
+}
+
+// Enemies placed at strategic intervals
+const spacing = (levelWidth - 800) / enemyCount;
+for (let i = 0; i < enemyCount; i++) {
+  enemies.push(createEnemy(randomType, 300 + i * spacing, ey));
+}`,
+        language: 'tsx',
+      },
+      {
+        title: '7. Camera & Particles',
+        description: 'The camera smoothly follows the player with look-ahead in the facing direction. Screen shake decays exponentially. Multiple particle spawner functions create distinct visual effects for every game event.',
+        code: `// systems/camera.ts — Smooth follow with look-ahead
+const lookAhead = player.facingRight ? 70 : -70;
+cam.targetX = player.x - screenW / 2 + lookAhead;
+const smoothFactor = 1 - Math.exp(-CAMERA_SMOOTH * dt);
+cam.x = lerp(cam.x, cam.targetX, smoothFactor);
+
+// Screen shake
+cam.shakeAmount *= 0.9; // exponential decay
+
+// systems/particles.ts — Spawner functions
+spawnJumpDust(particles, x, y);      // on jump
+spawnLandDust(particles, x, y);      // on landing
+spawnDashTrail(particles, x, y, h);  // during dash
+spawnHitSparks(particles, x, y);     // on enemy hit
+spawnDeathBurst(particles, x, y);    // on enemy death
+spawnCollectSparkle(particles, x, y); // on shard pickup
+spawnAmbientParticle(particles, ...); // background ambiance
+spawnShockwave(particles, x, y);     // boss ground slam`,
+        language: 'tsx',
+      },
+      {
+        title: '8. Rendering with PivotX',
+        description: 'The index.tsx maps all game state to PivotX React components. Enemies are rendered with type-specific visual designs. The player has a multi-part sprite (body, head, hair, eye, cape, sword). Frustum culling skips off-screen objects.',
+        code: `// index.tsx — Player rendering
+{playerVisible && (
+  <React.Fragment>
+    {/* Cape trail */}
+    <PivotRectangle
+      position={{ x: facingRight ? sx - 8 : sx + width, y: sy + 4 }}
+      width={10} height={height - 8}
+      fill={PLAYER_CAPE_COLOR + '88'} />
+
+    {/* Body */}
+    <PivotRectangle
+      position={{ x: sx, y: sy + 8 }}
+      width={width} height={height - 8}
+      fill={PLAYER_BODY_COLOR} />
+
+    {/* Head */}
+    <PivotCircle center={{ x: cx, y: sy + 6 }} radius={8}
+      fill={PLAYER_BODY_COLOR} />
+
+    {/* Hair */}
+    <PivotCircle center={{ x: cx - dir * 2, y: sy + 2 }} radius={6}
+      fill={PLAYER_HAIR_COLOR} />
+
+    {/* Attack sword */}
+    {p.isAttacking && (
+      <PivotRectangle
+        position={{ x: facingRight ? sx + width : sx - 26, y: sy + 6 }}
+        width={26} height={4}
+        fill={PLAYER_SWORD_COLOR} />
+    )}
+  </React.Fragment>
+)}
+
+// Frustum culling
+if (sx + plat.width < -50 || sx > W + 50) return null;`,
+        language: 'tsx',
+      },
+    ],
+  },
 ];

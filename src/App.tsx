@@ -10,6 +10,7 @@ import StaticSceneGame from './games/StaticScene';
 import DungeonGame from './games/Dungeon';
 import CarGame from './games/CarRace';
 import Nexus2500Game from './games/Nexus2500';
+import AetherdriftGame from './games/Aetherdrift';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/docs/:version/:sectionId" element={<DocsPage />} />
       <Route path="/tutorials" element={<TutorialsPage />} />
       <Route path="/tutorial/:gameId" element={<TutorialDetailPage />} />
+      <Route path="/game/aetherdrift" element={<AetherdriftGame />} />
       <Route path="/game/nexus2500" element={<Nexus2500Game />} />
       <Route path="/game/carrace" element={<CarGame />} />
       <Route path="/game/dungeon" element={<DungeonGame />} />
