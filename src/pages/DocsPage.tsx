@@ -1,18 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DOC_VERSIONS } from '../data/docs';
-import { DocSection } from '../types';
-
-const topNavBtn = (active: boolean): React.CSSProperties => ({
-  padding: '6px 14px',
-  background: active ? '#00ccff22' : 'transparent',
-  border: `1px solid ${active ? '#00ccff44' : 'transparent'}`,
-  borderRadius: 6,
-  color: active ? '#00ccff' : '#aaa',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-  fontWeight: active ? 600 : 400,
-});
 
 function renderInlineCode(text: string): React.ReactNode {
   const parts = text.split(/(`[^`]+`)/g);
@@ -205,143 +193,15 @@ export default function DocsPage() {
     navigate(`/docs/${version}`);
   };
 
-  const handleSectionClick = (section: DocSection) => {
-    navigate(`/docs/${selectedVersion}/${section.id}`);
-  };
-
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0a0a1a',
-      color: '#ddd',
-      fontFamily: "'Segoe UI', system-ui, sans-serif",
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      {/* Top Bar */}
-      <header style={{
-        padding: '12px 24px',
-        borderBottom: '1px solid #222',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        flexWrap: 'wrap',
-        background: '#0d0d1a',
+    <>
+      {/* Content Area */}
+      <main style={{
+        flex: 1,
+        padding: '30px 48px',
+        overflowY: 'auto',
+        maxWidth: 900,
       }}>
-        <h1
-          onClick={() => navigate('/')}
-          style={{
-            margin: 0, fontSize: '1.5rem', fontWeight: 800,
-            background: 'linear-gradient(90deg, #00ccff, #aa66ff)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            cursor: 'pointer',
-          }}
-        >
-          pIvotX
-        </h1>
-
-        <nav style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => navigate('/')} style={topNavBtn(false)}>Home</button>
-          <button onClick={() => navigate('/docs')} style={topNavBtn(true)}>Docs</button>
-          <button onClick={() => navigate('/tutorials')} style={topNavBtn(false)}>Tutorials</button>
-        </nav>
-
-        {/* Version Selector */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <label style={{ color: '#888', fontSize: '0.85rem' }}>Version:</label>
-          <select
-            value={selectedVersion}
-            onChange={e => handleVersionChange(e.target.value)}
-            style={{
-              padding: '6px 12px',
-              background: '#1a1a2e',
-              border: '1px solid #444',
-              borderRadius: 6,
-              color: '#fff',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            {DOC_VERSIONS.map(v => (
-              <option key={v.version} value={v.version}>{v.label}</option>
-            ))}
-          </select>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Sidebar */}
-        <aside style={{
-          width: 260,
-          minWidth: 260,
-          borderRight: '1px solid #222',
-          background: '#0d0d1a',
-          padding: '20px 0',
-          overflowY: 'auto',
-        }}>
-          <div style={{ padding: '0 16px 16px', borderBottom: '1px solid #1a1a2e', marginBottom: 8 }}>
-            <span style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase', letterSpacing: 1 }}>
-              Documentation
-            </span>
-          </div>
-          {currentDocs.sections.map(section => (
-            <div key={section.id}>
-              <button
-                onClick={() => handleSectionClick(section)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  padding: '10px 20px',
-                  background: activeSection?.id === section.id ? '#00ccff11' : 'transparent',
-                  border: 'none',
-                  borderLeft: activeSection?.id === section.id ? '3px solid #00ccff' : '3px solid transparent',
-                  color: activeSection?.id === section.id ? '#00ccff' : '#aaa',
-                  fontSize: '0.95rem',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  fontWeight: activeSection?.id === section.id ? 600 : 400,
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => {
-                  if (activeSection?.id !== section.id) e.currentTarget.style.color = '#ddd';
-                }}
-                onMouseLeave={e => {
-                  if (activeSection?.id !== section.id) e.currentTarget.style.color = '#aaa';
-                }}
-              >
-                {section.title}
-              </button>
-              {activeSection?.id === section.id && section.subsections?.map(sub => (
-                <button
-                  key={sub.id}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    padding: '6px 20px 6px 36px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#777',
-                    fontSize: '0.85rem',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {sub.title}
-                </button>
-              ))}
-            </div>
-          ))}
-        </aside>
-
-        {/* Content Area */}
-        <main style={{
-          flex: 1,
-          padding: '30px 48px',
-          overflowY: 'auto',
-          maxWidth: 900,
-        }}>
           {activeSection ? (
             <div>
               <MarkdownContent content={activeSection.content} />
@@ -393,7 +253,6 @@ export default function DocsPage() {
             </span>
           </div>
         </main>
-      </div>
-    </div>
+    </>
   );
 }

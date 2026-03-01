@@ -2,18 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GAME_TUTORIALS } from '../data/gameTutorials';
 
-const navBtnStyle = (active: boolean): React.CSSProperties => ({
-  padding: '10px 20px',
-  fontSize: '0.95rem',
-  background: active ? '#00ccff22' : 'transparent',
-  border: `1px solid ${active ? '#00ccff' : '#444'}`,
-  borderRadius: 8,
-  color: active ? '#00ccff' : '#aaa',
-  cursor: 'pointer',
-  fontWeight: active ? 700 : 400,
-  transition: 'all 0.2s',
-});
-
 type QuickStartTab = 'vanilla' | 'typescript' | 'react';
 
 export default function HomePage() {
@@ -37,17 +25,11 @@ export default function HomePage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0a0a1a 100%)',
-      color: '#fff',
-      fontFamily: "'Segoe UI', system-ui, sans-serif",
-    }}>
-      {/* Header */}
-      <header style={{
-        padding: '40px 20px 20px',
+    <>
+      {/* Hero */}
+      <section style={{
+        padding: '50px 20px 30px',
         textAlign: 'center',
-        borderBottom: '1px solid #333',
       }}>
         <h1 style={{
           fontSize: '3rem',
@@ -62,23 +44,10 @@ export default function HomePage() {
         <p style={{ color: '#888', fontSize: '1.2rem', marginTop: 8 }}>
           Lightweight 2D Game Library — Vanilla JS · TypeScript · React
         </p>
-
-        {/* Navigation */}
-        <nav style={{ marginTop: 20, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => navigate('/')} style={navBtnStyle(true)}>
-            Home
-          </button>
-          <button onClick={() => navigate('/docs')} style={navBtnStyle(false)}>
-            Documentation
-          </button>
-          <button onClick={() => navigate('/tutorials')} style={navBtnStyle(false)}>
-            Game Tutorials
-          </button>
-        </nav>
-      </header>
+      </section>
 
       {/* Search */}
-      <div style={{ maxWidth: 700, margin: '30px auto', padding: '0 20px' }}>
+      <div style={{ maxWidth: 700, margin: '0 auto 30px', padding: '0 20px' }}>
         <div style={{ position: 'relative' }}>
           <input
             type="text"
@@ -329,6 +298,6 @@ function MyGame() {
           </pre>
         </div>
       </section>
-    </div>
+    </>
   );
 }

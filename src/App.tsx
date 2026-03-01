@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import SiteLayout from './components/templates/SiteLayout';
 import HomePage from './pages/HomePage';
 import DocsPage from './pages/DocsPage';
 import TutorialsPage from './pages/TutorialsPage';
@@ -15,12 +16,15 @@ import AetherdriftGame from './games/Aetherdrift';
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/docs" element={<DocsPage />} />
-      <Route path="/docs/:version" element={<DocsPage />} />
-      <Route path="/docs/:version/:sectionId" element={<DocsPage />} />
-      <Route path="/tutorials" element={<TutorialsPage />} />
-      <Route path="/tutorial/:gameId" element={<TutorialDetailPage />} />
+      {/* Pages with shared static header */}
+      <Route path="/" element={<SiteLayout><HomePage /></SiteLayout>} />
+      <Route path="/docs" element={<SiteLayout><DocsPage /></SiteLayout>} />
+      <Route path="/docs/:version" element={<SiteLayout><DocsPage /></SiteLayout>} />
+      <Route path="/docs/:version/:sectionId" element={<SiteLayout><DocsPage /></SiteLayout>} />
+      <Route path="/tutorials" element={<SiteLayout><TutorialsPage /></SiteLayout>} />
+      <Route path="/tutorial/:gameId" element={<SiteLayout><TutorialDetailPage /></SiteLayout>} />
+
+      {/* Game routes — full screen, no header */}
       <Route path="/game/aetherdrift" element={<AetherdriftGame />} />
       <Route path="/game/nexus2500" element={<Nexus2500Game />} />
       <Route path="/game/carrace" element={<CarGame />} />

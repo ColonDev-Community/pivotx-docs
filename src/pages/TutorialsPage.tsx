@@ -2,17 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GAME_TUTORIALS } from '../data/gameTutorials';
 
-const nb = (active: boolean): React.CSSProperties => ({
-  padding: '6px 14px',
-  background: active ? '#00ccff22' : 'transparent',
-  border: `1px solid ${active ? '#00ccff44' : 'transparent'}`,
-  borderRadius: 6,
-  color: active ? '#00ccff' : '#aaa',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-  fontWeight: active ? 600 : 400,
-});
-
 export default function TutorialsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -38,35 +27,8 @@ export default function TutorialsPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', background: '#0a0a1a', color: '#ddd',
-      fontFamily: "'Segoe UI', system-ui, sans-serif",
-    }}>
-      {/* Header */}
-      <header style={{
-        padding: '12px 24px', borderBottom: '1px solid #222',
-        display: 'flex', alignItems: 'center', gap: 16, background: '#0d0d1a', flexWrap: 'wrap',
-      }}>
-        <h1
-          onClick={() => navigate('/')}
-          style={{
-            margin: 0, fontSize: '1.5rem', fontWeight: 800,
-            background: 'linear-gradient(90deg, #00ccff, #aa66ff)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            cursor: 'pointer',
-          }}
-        >
-          pIvotX
-        </h1>
-        <nav style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => navigate('/')} style={nb(false)}>Home</button>
-          <button onClick={() => navigate('/docs')} style={nb(false)}>Docs</button>
-          <button onClick={() => navigate('/tutorials')} style={nb(true)}>Tutorials</button>
-        </nav>
-      </header>
-
-      <div style={{ maxWidth: 1000, margin: '30px auto', padding: '0 20px' }}>
-        <h2 style={{ textAlign: 'center', fontSize: '2rem' }}>Game Tutorials</h2>
+    <div style={{ maxWidth: 1000, margin: '30px auto', padding: '0 20px' }}>
+      <h2 style={{ textAlign: 'center', fontSize: '2rem' }}>Game Tutorials</h2>
         <p style={{ textAlign: 'center', color: '#888', marginBottom: 24 }}>
           Step-by-step code breakdowns of every game built with PivotX
         </p>
@@ -166,6 +128,5 @@ export default function TutorialsPage() {
           </p>
         )}
       </div>
-    </div>
   );
 }
