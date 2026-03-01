@@ -32,15 +32,17 @@ export function generateLevel(realm: Realm, screenH: number): LevelData {
   const pAccent = realm.platformAccent;
   const gColor = realm.groundColor;
 
-  // ── Ground segments with gaps ──────────────────────────────────────────
+  // ── Continuous ground (no gaps — player won't fall) ─────────────────────
+  // Build ground as contiguous segments that tile seamlessly
   let gx = 0;
   const segMinLen = 200;
   const segMaxLen = 500;
-  const gapMin = 80;
-  const gapMax = 160;
 
-  while (gx < levelW - 400) {
-    const segLen = segMinLen + Math.random() * (segMaxLen - segMinLen);
+  while (gx < levelW) {
+    const segLen = Math.min(
+      segMinLen + Math.random() * (segMaxLen - segMinLen),
+      levelW - gx, // don't overshoot level width
+    );
     platforms.push(createGroundSegment(gx, groundY, segLen, gColor, pAccent));
 
     // Sprinkle shards along ground
@@ -56,28 +58,7 @@ export function generateLevel(realm: Realm, screenH: number): LevelData {
     }
 
     gx += segLen;
-
-    // Gap
-    if (gx < levelW - 600) {
-      const gapLen = gapMin + Math.random() * (gapMax - gapMin);
-
-      // Floating platform over gap
-      if (Math.random() < 0.7) {
-        const platW = 60 + Math.random() * 60;
-        platforms.push(createPlatform(
-          gx + gapLen / 2 - platW / 2,
-          groundY - 40 - Math.random() * 60,
-          platW, 16,
-          'solid', pColor, pAccent,
-        ));
-      }
-
-      gx += gapLen;
-    }
   }
-
-  // Final ground before boss
-  platforms.push(createGroundSegment(gx, groundY, 600, gColor, pAccent));
 
   // ── Floating platforms (higher routes) ─────────────────────────────────
   const floatCount = Math.floor(levelW / 350) + realm.difficulty * 3;
