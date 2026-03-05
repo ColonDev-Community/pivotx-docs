@@ -23,7 +23,6 @@ import {
   PivotCircle,
   PivotRectangle,
   PivotLabel,
-  PivotLine,
   useGameLoop,
 } from 'pivotx/react';
 import { useExitToMenu } from '../../hooks/useExitToMenu';
@@ -31,8 +30,6 @@ import { useExitToMenu } from '../../hooks/useExitToMenu';
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-
-interface Vec2 { x: number; y: number; }
 
 interface CarState {
   x: number; y: number;
@@ -250,6 +247,7 @@ function useCarGame(onExit: () => void) {
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onExit]);
 
   const restartGame = useCallback(() => {

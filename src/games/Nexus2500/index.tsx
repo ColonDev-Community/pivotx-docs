@@ -31,7 +31,6 @@ import {
   PivotCircle,
   PivotRectangle,
   PivotLabel,
-  PivotLine,
   useGameLoop,
 } from 'pivotx/react';
 import { useExitToMenu } from '../../hooks/useExitToMenu';
@@ -340,10 +339,14 @@ function collides(a: GameObject, b: GameObject): boolean {
          a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
+// @ts-ignore - kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function dist(a: Vec2, b: Vec2): number {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 }
 
+// @ts-ignore - kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * Math.min(1, Math.max(0, t));
 }
