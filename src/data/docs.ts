@@ -2,8 +2,8 @@ import { DocVersion } from '../types';
 
 export const DOC_VERSIONS: DocVersion[] = [
   {
-    version: '2.x',
-    label: 'v2.x (Latest)',
+    version: '1.x',
+    label: 'v1.x (Latest)',
     sections: [
       {
         id: 'getting-started',
@@ -22,7 +22,9 @@ PivotX is a lightweight 2D game development library. One package, three ways to 
 ### Installation
 
 \`\`\`bash
-npm install pivotx
+npm i @colon-dev/pivotx
+# or
+yarn add @colon-dev/pivotx
 \`\`\`
 
 Or via CDN (no npm, no build step):
@@ -236,7 +238,9 @@ Import PivotX classes directly with full type safety. No React required.
 ### Installation
 
 \`\`\`bash
-npm install pivotx
+npm i @colon-dev/pivotx
+# or
+yarn add @colon-dev/pivotx
 \`\`\`
 
 ### Complete Example
@@ -798,21 +802,23 @@ var shakeY = screenShake > 0.1 ? (Math.random() - 0.5) * screenShake : 0;
     ],
   },
   {
-    version: '1.x',
-    label: 'v1.x (Legacy)',
+    version: '0.x',
+    label: 'v0.x (Legacy)',
     sections: [
       {
         id: 'getting-started',
         title: 'Getting Started',
         content: `
-## Getting Started with PivotX v1.x
+## Getting Started with PivotX v0.x
 
-> **Note:** v1.x is a legacy version. Consider upgrading to v2.x for the latest features.
+> **Note:** v0.x is a legacy version. Consider upgrading to v1.x for the latest features.
 
 ### Installation
 
 \`\`\`bash
-npm install pivotx@1
+npm i @colon-dev/pivotx@0
+# or
+yarn add @colon-dev/pivotx@0
 \`\`\`
 
 ### Basic Usage (Vanilla JS)
@@ -853,7 +859,7 @@ function App() {
 }
 \`\`\`
 
-### Differences from v2.x
+### Differences from v1.x
 
 - \`useGameLoop\` does not cap delta time — handle tab-switching manually
 - No built-in \`PivotLine\` / \`Line\` component
@@ -866,7 +872,7 @@ function App() {
         id: 'components',
         title: 'API Reference',
         content: `
-## API Reference (v1.x)
+## API Reference (v0.x)
 
 ### Core Classes
 
@@ -876,7 +882,7 @@ function App() {
 - \`Label\` — Text rendering
 - \`Point(x, y)\` — Coordinate factory
 
-> \`Line\` is not available in v1.x. Use a thin \`Rectangle\` as a workaround.
+> \`Line\` is not available in v0.x. Use a thin \`Rectangle\` as a workaround.
 
 ### React Components
 
@@ -885,12 +891,12 @@ function App() {
 - \`PivotCircle\` — Circle rendering
 - \`PivotLabel\` — Text rendering
 
-> \`PivotLine\` is not available in v1.x.
+> \`PivotLine\` is not available in v0.x.
 
 ### Examples
 
 \`\`\`js
-// Vanilla JS (v1.x)
+// Vanilla JS (v0.x)
 var canvas = new Canvas("game");
 var rect = new Rectangle(Point(10, 20), 100, 50);
 rect.fillColor = "#ff0000";
@@ -898,7 +904,7 @@ canvas.add(rect);
 \`\`\`
 
 \`\`\`tsx
-// React (v1.x)
+// React (v0.x)
 <PivotCanvas width={640} height={480} background="#111">
   <PivotRectangle position={{ x: 10, y: 20 }} width={100} height={50} fill="#ff0000" />
   <PivotCircle center={{ x: 200, y: 150 }} radius={30} fill="#00ff00" />
@@ -910,7 +916,7 @@ canvas.add(rect);
         id: 'hooks',
         title: 'Hooks API',
         content: `
-## Hooks API (v1.x)
+## Hooks API (v0.x)
 
 ### useGameLoop
 
@@ -923,7 +929,7 @@ useGameLoop((deltaTime) => {
 });
 \`\`\`
 
-> In v1.x, \`useGameLoop\` does not cap delta time. When the browser tab is inactive and then refocused, \`dt\` can be very large, causing objects to teleport. Add your own cap:
+> In v0.x, \`useGameLoop\` does not cap delta time. When the browser tab is inactive and then refocused, \`dt\` can be very large, causing objects to teleport. Add your own cap:
 
 \`\`\`tsx
 useGameLoop((dt) => {

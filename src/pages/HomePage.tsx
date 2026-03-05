@@ -65,6 +65,7 @@ export default function HomePage() {
               outline: 'none',
               boxSizing: 'border-box',
               transition: 'border-color 0.2s',
+              display: 'none',
             }}
             onFocus={e => e.target.style.borderColor = '#00ccff'}
             onBlur={e => e.target.style.borderColor = '#333'}
