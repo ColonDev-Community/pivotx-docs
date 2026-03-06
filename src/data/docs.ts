@@ -2,8 +2,8 @@ import { DocVersion } from '../types';
 
 export const DOC_VERSIONS: DocVersion[] = [
   {
-    version: '1.x',
-    label: 'v1.x (Latest)',
+    version: '1.2.x',
+    label: 'v1.2.x (Latest)',
     sections: [
       {
         id: 'getting-started',
@@ -796,6 +796,991 @@ var shakeX = screenShake > 0.1 ? (Math.random() - 0.5) * screenShake : 0;
 var shakeY = screenShake > 0.1 ? (Math.random() - 0.5) * screenShake : 0;
 
 // Offset all drawing by (shakeX, shakeY)
+\`\`\`
+        `,
+      },
+      {
+        id: 'asset-loader',
+        title: 'Loading Images (AssetLoader)',
+        content: `
+## Loading Images with AssetLoader
+
+Before using images, sprites, or tile sheets you need to preload them. \`AssetLoader\` provides two static methods.
+
+### Loading a single image
+
+\`\`\`ts
+import { AssetLoader } from '@colon-dev/pivotx';
+
+const heroImg = await AssetLoader.loadImage('/sprites/hero.png');
+// heroImg is a fully loaded HTMLImageElement
+\`\`\`
+
+### Batch-loading multiple images
+
+For games with many assets, use \`loadAssets()\` to load everything in parallel:
+
+\`\`\`ts
+const assets = await AssetLoader.loadAssets({
+  hero:       '/sprites/hero.png',
+  enemy:      '/sprites/enemy.png',
+  tileset:    '/tiles/ground.png',
+  background: '/bg/sky.png',
+});
+
+// Access by name — all are HTMLImageElement
+console.log(assets.hero.naturalWidth);
+\`\`\`
+
+### Error handling
+
+\`\`\`ts
+try {
+  const img = await AssetLoader.loadImage('/missing.png');
+} catch (err) {
+  console.error(err.message);
+  // "pIvotX: Failed to load image \\"/missing.png\\""
+}
+\`\`\`
+
+### Typical setup pattern
+
+\`\`\`ts
+async function main() {
+  // 1. Preload all assets
+  const assets = await AssetLoader.loadAssets({
+    hero:    '/sprites/hero.png',
+    tileset: '/tiles/ground.png',
+    sky:     '/bg/sky.png',
+  });
+
+  // 2. Create canvas
+  const canvas = new Canvas('game');
+
+  // 3. Build sprites, tilemaps, backgrounds from loaded assets
+  const heroSheet = Sprite.createSheet(assets.hero, 32, 32);
+  const heroSprite = new Sprite(Point(100, 200), heroSheet);
+
+  // 4. Start game loop
+  canvas.startLoop((dt) => {
+    canvas.clear();
+    canvas.add(heroSprite);
+  });
+}
+
+main();
+\`\`\`
+
+### React Pattern
+
+In React, load assets inside a \`useEffect\` or use a loading state:
+
+\`\`\`tsx
+import { AssetLoader } from 'pivotx/react';
+
+const [assets, setAssets] = useState<Record<string, HTMLImageElement> | null>(null);
+
+useEffect(() => {
+  AssetLoader.loadAssets({
+    hero:    '/sprites/hero.png',
+    tileset: '/tiles/ground.png',
+  }).then(setAssets);
+}, []);
+
+if (!assets) return <div>Loading...</div>;
+// Now use assets.hero, assets.tileset in your PivotCanvas
+\`\`\`
+        `,
+      },
+      {
+        id: 'game-image',
+        title: 'Drawing Images (GameImage)',
+        content: `
+## Drawing Images with GameImage
+
+\`GameImage\` draws a static image onto the canvas. Accepts a pre-loaded \`HTMLImageElement\` or a URL string.
+
+### Vanilla JS — pre-loaded image (recommended)
+
+\`\`\`ts
+import { GameImage, AssetLoader, Point } from '@colon-dev/pivotx';
+
+const img  = await AssetLoader.loadImage('/background.png');
+const bg   = new GameImage(Point(0, 0), img);
+bg.width   = 600;
+bg.height  = 400;
+canvas.add(bg);
+\`\`\`
+
+### Auto-loading from a URL
+
+\`\`\`ts
+const bg = new GameImage(Point(0, 0), '/background.png');
+// draw() silently skips until the image is loaded
+canvas.startLoop((dt) => {
+  canvas.clear();
+  canvas.add(bg);
+});
+\`\`\`
+
+### Image properties
+
+\`\`\`ts
+const hero = new GameImage(Point(100, 50), heroImg);
+hero.width       = 64;            // display width (null = natural)
+hero.height      = 64;            // display height (null = natural)
+hero.opacity     = 0.8;           // semi-transparent
+hero.rotation    = Math.PI / 4;   // rotate 45°
+hero.pixelPerfect = true;          // crisp pixel art when scaled
+\`\`\`
+
+### React — PivotImage component
+
+\`\`\`tsx
+import { PivotImage } from 'pivotx/react';
+
+<PivotImage
+  src={assets.hero}           // HTMLImageElement or URL string
+  position={{ x: 100, y: 50 }}
+  width={64}
+  height={64}
+  opacity={0.8}
+  rotation={0}
+  pixelPerfect
+/>
+\`\`\`
+
+### Checking load state / swapping images
+
+\`\`\`ts
+if (hero.loaded) {
+  console.log('Image is ready!');
+}
+hero.setSrc('/sprites/hero-powered-up.png');
+// hero.loaded becomes false until new image finishes loading
+\`\`\`
+        `,
+      },
+      {
+        id: 'sprites',
+        title: 'Sprites & SpriteSheets',
+        content: `
+## Sprites & SpriteSheets
+
+A **spritesheet** is a single image containing multiple frames arranged in a grid. \`Sprite\` draws one frame at a time.
+
+### SpriteSheet layout
+
+\`\`\`
+┌───┬───┬───┬───┐
+│ 0 │ 1 │ 2 │ 3 │   row 0
+├───┼───┼───┼───┤
+│ 4 │ 5 │ 6 │ 7 │   row 1
+└───┴───┴───┴───┘
+Frames numbered left-to-right, top-to-bottom.
+\`\`\`
+
+### Creating a SpriteSheet
+
+\`\`\`ts
+import { Sprite, AssetLoader, Point } from '@colon-dev/pivotx';
+
+const img   = await AssetLoader.loadImage('/hero-sheet.png');
+const sheet = Sprite.createSheet(img, 32, 32);
+
+console.log(sheet.columns);     // auto-calculated
+console.log(sheet.totalFrames); // auto-calculated
+\`\`\`
+
+If your sheet has unused cells at the end:
+
+\`\`\`ts
+const sheet = Sprite.createSheet(img, 64, 64, 12); // only first 12 frames
+\`\`\`
+
+### Drawing a sprite (Vanilla JS)
+
+\`\`\`ts
+const hero   = new Sprite(Point(100, 200), sheet);
+hero.frame   = 0;     // first frame
+hero.scale   = 2;     // draw at 2× size
+canvas.add(hero);
+\`\`\`
+
+### Flipping and properties
+
+\`\`\`ts
+hero.flipX   = true;    // face left
+hero.flipY   = true;    // upside down
+hero.opacity = 0.5;     // ghost effect
+hero.pixelPerfect = true;  // crisp pixel art (default: true)
+
+// Computed dimensions
+console.log(hero.drawWidth);   // frameWidth × scale
+console.log(hero.drawHeight);  // frameHeight × scale
+\`\`\`
+
+### React — PivotSprite component
+
+\`\`\`tsx
+import { PivotSprite } from 'pivotx/react';
+
+<PivotSprite
+  position={{ x: 100, y: 200 }}
+  sheet={heroSheet}
+  frame={currentFrame}
+  scale={2}
+  flipX={facingLeft}
+  pixelPerfect
+/>
+\`\`\`
+
+### Manual frame cycling
+
+\`\`\`ts
+let timer = 0;
+canvas.startLoop((dt) => {
+  canvas.clear();
+  timer += dt;
+  if (timer > 0.15) {
+    timer = 0;
+    coin.frame = (coin.frame + 1) % sheet.totalFrames;
+  }
+  canvas.add(coin);
+});
+\`\`\`
+        `,
+      },
+      {
+        id: 'sprite-animator',
+        title: 'Sprite Animation',
+        content: `
+## Sprite Animation with SpriteAnimator
+
+\`SpriteAnimator\` manages named animation clips. Register clips, call \`play()\` to switch, and \`update(dt)\` every frame.
+
+### Basic setup
+
+\`\`\`ts
+import { Sprite, SpriteAnimator, AssetLoader, Point } from '@colon-dev/pivotx';
+
+const img    = await AssetLoader.loadImage('/hero-sheet.png');
+const sheet  = Sprite.createSheet(img, 32, 32);
+const hero   = new Sprite(Point(100, 200), sheet);
+hero.scale   = 2;
+
+const animator = new SpriteAnimator(hero);
+animator
+  .addClip('idle', { frames: [0, 1, 2, 3],    fps: 6,  loop: true  })
+  .addClip('run',  { frames: [4, 5, 6, 7, 8], fps: 10, loop: true  })
+  .addClip('jump', { frames: [9, 10],          fps: 4,  loop: false });
+
+animator.play('idle');
+\`\`\`
+
+### Game loop integration
+
+\`\`\`ts
+canvas.startLoop((dt) => {
+  canvas.clear();
+  animator.update(dt);
+  canvas.add(hero);
+});
+\`\`\`
+
+### Switching animations based on input
+
+\`\`\`ts
+if (keys['ArrowRight']) {
+  hero.flipX = false;
+  animator.play('run');   // only resets if clip changed
+} else if (keys['ArrowLeft']) {
+  hero.flipX = true;
+  animator.play('run');
+} else {
+  animator.play('idle');
+}
+\`\`\`
+
+### Non-looping animations
+
+\`\`\`ts
+animator.addClip('attack', { frames: [11, 12, 13, 14], fps: 12, loop: false });
+
+animator.play('attack');
+
+// Check when finished:
+if (animator.isFinished) {
+  animator.play('idle');
+}
+\`\`\`
+
+### State getters
+
+\`\`\`ts
+animator.currentClip;   // "idle", "run", etc.
+animator.isPlaying;     // true if actively playing
+animator.isFinished;    // true if non-looping clip ended
+animator.currentIndex;  // index within the clip's frames array
+\`\`\`
+
+### React pattern
+
+In React, you typically manage the animator in a \`useRef\` and update in \`useGameLoop\`:
+
+\`\`\`tsx
+const animatorRef = useRef<SpriteAnimator | null>(null);
+
+// Initialize (once, after assets load)
+const sheet = Sprite.createSheet(heroImg, 32, 32);
+animatorRef.current = new SpriteAnimator(new Sprite({ x: 0, y: 0 }, sheet));
+animatorRef.current
+  .addClip('idle', { frames: [0, 1, 2, 3], fps: 6, loop: true })
+  .addClip('run',  { frames: [4, 5, 6, 7], fps: 10, loop: true });
+animatorRef.current.play('idle');
+
+// In game loop
+useGameLoop((dt) => {
+  animatorRef.current?.update(dt);
+  setTick(t => t + 1);
+});
+
+// In JSX — read the current frame
+<PivotSprite
+  position={playerPos}
+  sheet={sheet}
+  frame={animatorRef.current?.currentIndex ?? 0}
+  scale={2}
+/>
+\`\`\`
+        `,
+      },
+      {
+        id: 'parallax',
+        title: 'Parallax Backgrounds',
+        content: `
+## Parallax Scrolling Backgrounds
+
+\`TiledBackground\` draws a repeating image that tiles seamlessly and supports parallax scrolling. Stack multiple layers for depth.
+
+### Single scrolling background (Vanilla JS)
+
+\`\`\`ts
+import { TiledBackground, AssetLoader } from '@colon-dev/pivotx';
+
+const skyImg = await AssetLoader.loadImage('/bg/sky.png');
+const sky    = new TiledBackground(skyImg, 600, 400);
+
+canvas.startLoop((dt) => {
+  canvas.clear();
+  sky.scroll(50 * dt);   // 50 pixels/sec
+  canvas.add(sky);
+});
+\`\`\`
+
+### Multi-layer parallax
+
+Lower \`parallaxFactor\` = slower scroll = further away:
+
+\`\`\`ts
+const assets = await AssetLoader.loadAssets({
+  sky:   '/bg/sky.png',
+  hills: '/bg/hills.png',
+  trees: '/bg/trees.png',
+});
+
+const sky   = new TiledBackground(assets.sky,   600, 400);
+sky.parallaxFactor = 0.2;   // distant
+
+const hills = new TiledBackground(assets.hills, 600, 400);
+hills.parallaxFactor = 0.5; // mid-ground
+
+const trees = new TiledBackground(assets.trees, 600, 400);
+trees.parallaxFactor = 1.0; // foreground
+
+canvas.startLoop((dt) => {
+  canvas.clear();
+  const scrollSpeed = 80 * dt;
+  sky.scroll(scrollSpeed);
+  hills.scroll(scrollSpeed);
+  trees.scroll(scrollSpeed);
+
+  // Draw back-to-front
+  canvas.add(sky);
+  canvas.add(hills);
+  canvas.add(trees);
+  canvas.add(playerSprite);
+});
+\`\`\`
+
+### Properties
+
+\`\`\`ts
+bg.scrollX;          // current horizontal offset
+bg.scrollY;          // current vertical offset
+bg.opacity = 0.8;    // semi-transparent
+bg.parallaxFactor;   // speed multiplier (0.2 → 1.0)
+
+bg.scroll(dx, dy);   // advance offset (parallaxFactor applied automatically)
+bg.setViewport(w, h); // update on resize
+\`\`\`
+
+### Vertical scrolling
+
+\`\`\`ts
+sky.scroll(0, 30 * dt);
+\`\`\`
+        `,
+      },
+      {
+        id: 'camera',
+        title: 'Camera',
+        content: `
+## Camera — Following the Player
+
+The \`Camera\` class transforms the canvas context so the world scrolls while the player stays centred. Anything drawn between \`begin()\` and \`end()\` moves with the camera; anything after \`end()\` stays fixed (HUD).
+
+### Basic follow (Vanilla JS)
+
+\`\`\`ts
+import { Camera } from '@colon-dev/pivotx';
+
+const camera = new Camera(600, 400); // viewport size
+
+canvas.startLoop((dt) => {
+  canvas.clear();
+
+  camera.follow(player.position, 0.08); // smooth follow
+  camera.begin(canvas.ctx);
+
+  // ── World space ── (scrolls with camera)
+  canvas.add(tilemap);
+  canvas.add(playerSprite);
+
+  camera.end(canvas.ctx);
+
+  // ── Screen space ── (fixed on screen)
+  canvas.add(scoreLabel);
+});
+\`\`\`
+
+### Clamping to world boundaries
+
+\`\`\`ts
+camera.follow(player.position, 0.08);
+camera.clamp(worldWidth, worldHeight); // call AFTER follow
+camera.begin(canvas.ctx);
+\`\`\`
+
+### Zoom
+
+\`\`\`ts
+camera.zoom = 2;    // 2× zoom in
+camera.zoom = 0.5;  // zoom out
+\`\`\`
+
+### Coordinate conversion
+
+\`\`\`ts
+// Mouse click → world position
+const worldPos = camera.screenToWorld({ x: mouseX, y: mouseY });
+
+// World position → screen position (for UI indicators)
+const screenPos = camera.worldToScreen(enemy.position);
+\`\`\`
+
+### React note
+
+In React the imperative Camera class works best via \`useRef\`:
+
+\`\`\`tsx
+const cameraRef = useRef(new Camera(W, H));
+
+useGameLoop((dt) => {
+  cameraRef.current.follow(playerPos, 0.08);
+  // Camera transforms are applied in useRef-based draw logic
+});
+\`\`\`
+
+> **Note:** The React \`<PivotCanvas>\` re-draws children each render. For camera-based games, you may combine imperative core classes in your game hook, or use the world-to-screen offset pattern seen in the Aetherdrift game.
+        `,
+      },
+      {
+        id: 'platforms-collision',
+        title: 'Platforms & AABB Collision',
+        content: `
+## Platforms & AABB Collision
+
+\`Platform\` is a rectangle with a built-in AABB \`bounds\` getter. Use the collision functions for physics.
+
+### Creating platforms
+
+\`\`\`ts
+import { Platform, Point, aabbOverlap, aabbOverlapDepth, createAABB }
+  from '@colon-dev/pivotx';
+
+// Solid ground
+const ground = new Platform(Point(0, 350), 600, 50);
+ground.fillColor = '#4a7c59';
+
+// Jump-through ledge
+const ledge = new Platform(Point(200, 250), 120, 16);
+ledge.oneWay    = true;
+ledge.fillColor = '#8b5e3c';
+\`\`\`
+
+### Creating an AABB from player state
+
+\`\`\`ts
+const playerBox = createAABB(player.x, player.y, player.width, player.height);
+\`\`\`
+
+### Simple overlap check
+
+\`\`\`ts
+if (aabbOverlap(playerBox, ground.bounds)) {
+  // collision!
+}
+\`\`\`
+
+### Collision resolution with overlap depth
+
+\`\`\`ts
+for (const plat of platforms) {
+  const depth = aabbOverlapDepth(playerBox, plat.bounds);
+  if (!depth) continue;
+
+  if (depth.y < depth.x) {
+    // Vertical collision
+    if (player.vy > 0) {
+      player.y -= depth.y;   // push up (landing)
+      player.vy = 0;
+      player.grounded = true;
+    } else if (!plat.oneWay) {
+      player.y += depth.y;   // push down (head bump)
+      player.vy = 0;
+    }
+  } else if (!plat.oneWay) {
+    // Horizontal collision (wall)
+    if (player.vx > 0) player.x -= depth.x;
+    else                player.x += depth.x;
+    player.vx = 0;
+  }
+}
+\`\`\`
+
+### One-way platforms
+
+When \`oneWay\` is true, skip collision unless the player is falling:
+
+\`\`\`ts
+if (plat.oneWay && player.vy <= 0) continue;
+\`\`\`
+
+### React — PivotPlatform component
+
+\`\`\`tsx
+import { PivotPlatform } from 'pivotx/react';
+
+<PivotPlatform
+  position={{ x: 0, y: 350 }}
+  width={600}
+  height={50}
+  fill="#4a7c59"
+  oneWay={false}
+/>
+\`\`\`
+        `,
+      },
+      {
+        id: 'tilemaps',
+        title: 'Tilemaps',
+        content: `
+## Tilemaps — Grid-Based Levels
+
+\`Tilemap\` renders a 2D grid of tiles from a \`SpriteSheet\` and provides collision queries.
+
+### Building a tilemap
+
+\`\`\`ts
+import { Tilemap, Sprite, AssetLoader } from '@colon-dev/pivotx';
+
+const tileImg = await AssetLoader.loadImage('/tiles/ground.png');
+const sheet   = Sprite.createSheet(tileImg, 16, 16);
+
+const mapData = [
+  [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+  [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+  [-1, -1, -1,  0,  1,  1,  2, -1, -1, -1],
+  [ 0,  1,  1,  1,  1,  1,  1,  1,  1,  2],
+  [ 3,  4,  4,  4,  4,  4,  4,  4,  4,  5],
+];
+
+const tilemap = new Tilemap(sheet, mapData, 32);
+\`\`\`
+
+### Defining solid tiles
+
+\`\`\`ts
+tilemap.solidTiles = new Set([0, 1, 2, 3, 4, 5]);
+\`\`\`
+
+### Point-based collision check
+
+\`\`\`ts
+if (tilemap.isSolidAt(player.x + 16, player.y + 32)) {
+  player.grounded = true;
+}
+\`\`\`
+
+### Region-based collision (recommended)
+
+\`\`\`ts
+const playerAABB = createAABB(player.x, player.y, 32, 32);
+const nearbyTiles = tilemap.getSolidTilesInRegion(playerAABB);
+
+for (const tileBox of nearbyTiles) {
+  const depth = aabbOverlapDepth(playerAABB, tileBox);
+  if (depth) {
+    if (depth.y < depth.x) {
+      if (player.vy > 0) {
+        player.y -= depth.y;
+        player.vy = 0;
+      } else {
+        player.y += depth.y;
+        player.vy = 0;
+      }
+    } else {
+      if (player.vx > 0) player.x -= depth.x;
+      else                player.x += depth.x;
+      player.vx = 0;
+    }
+  }
+}
+\`\`\`
+
+### Modifying tiles at runtime
+
+\`\`\`ts
+tilemap.setTile(col, row, -1);  // clear (breakable block)
+tilemap.setTile(col, row, 6);   // replace with frame 6
+\`\`\`
+
+### Tilemap dimensions
+
+\`\`\`ts
+tilemap.rows;            // number of rows
+tilemap.cols;            // number of columns
+tilemap.tileSize;        // rendered tile size
+tilemap.widthInPixels;   // cols × tileSize
+tilemap.heightInPixels;  // rows × tileSize
+\`\`\`
+
+### Using with Camera
+
+\`\`\`ts
+camera.follow(player.position, 0.08);
+camera.clamp(tilemap.widthInPixels, tilemap.heightInPixels);
+camera.begin(canvas.ctx);
+
+canvas.add(tilemap);
+canvas.add(playerSprite);
+
+camera.end(canvas.ctx);
+canvas.add(hudLabel);
+\`\`\`
+
+### React — PivotTilemap component
+
+\`\`\`tsx
+import { PivotTilemap } from 'pivotx/react';
+
+<PivotTilemap
+  sheet={tileSheet}
+  mapData={levelData}
+  tileSize={32}
+  solidTiles={solidTileSet}
+  pixelPerfect
+/>
+\`\`\`
+        `,
+      },
+      {
+        id: 'platformer-example',
+        title: 'Full Platformer Example',
+        content: `
+## Example — Putting It All Together (Platformer)
+
+This example combines all the new features: asset loading, sprites, animation, tilemap collision, camera, and parallax backgrounds.
+
+### Vanilla JS / TypeScript
+
+\`\`\`ts
+import {
+  Canvas, Point, Label,
+  AssetLoader, Sprite, SpriteAnimator,
+  TiledBackground, Tilemap, Camera,
+  createAABB, aabbOverlapDepth,
+} from '@colon-dev/pivotx';
+
+async function main() {
+  const assets = await AssetLoader.loadAssets({
+    hero:    '/sprites/hero-32x32.png',
+    tileset: '/tiles/tileset-16x16.png',
+    sky:     '/bg/sky.png',
+    hills:   '/bg/hills.png',
+  });
+
+  const canvas = new Canvas('game');
+  const W = canvas.getWidth();
+  const H = canvas.getHeight();
+  const camera = new Camera(W, H);
+
+  // Parallax layers
+  const sky  = new TiledBackground(assets.sky, W, H);
+  sky.parallaxFactor = 0.2;
+  const hills = new TiledBackground(assets.hills, W, H);
+  hills.parallaxFactor = 0.5;
+
+  // Tilemap
+  const tileSheet = Sprite.createSheet(assets.tileset, 16, 16);
+  const mapData = [
+    [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1, 0, 1, 2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1, 0, 1, 2,-1,-1,-1,-1,-1, 0, 1, 1, 2,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+    [ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [ 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5],
+  ];
+  const tilemap = new Tilemap(tileSheet, mapData, 32);
+  tilemap.solidTiles = new Set([0, 1, 2, 3, 4, 5]);
+
+  // Player
+  const heroSheet  = Sprite.createSheet(assets.hero, 32, 32);
+  const heroSprite = new Sprite(Point(64, 200), heroSheet);
+  heroSprite.scale = 2;
+
+  const animator = new SpriteAnimator(heroSprite);
+  animator
+    .addClip('idle', { frames: [0, 1, 2, 3],    fps: 6,  loop: true })
+    .addClip('run',  { frames: [4, 5, 6, 7, 8], fps: 10, loop: true })
+    .addClip('jump', { frames: [9, 10],          fps: 4,  loop: false });
+  animator.play('idle');
+
+  const player = {
+    x: 64, y: 200, vx: 0, vy: 0,
+    width: 28, height: 56, speed: 200,
+    jumpForce: -450, grounded: false,
+  };
+  const GRAVITY = 800;
+
+  const keys: Record<string, boolean> = {};
+  document.addEventListener('keydown', (e) => { keys[e.key] = true; });
+  document.addEventListener('keyup',   (e) => { keys[e.key] = false; });
+
+  canvas.startLoop((dt) => {
+    canvas.clear();
+
+    player.vx = 0;
+    if (keys['ArrowRight'] || keys['d']) {
+      player.vx = player.speed;
+      heroSprite.flipX = false;
+    }
+    if (keys['ArrowLeft'] || keys['a']) {
+      player.vx = -player.speed;
+      heroSprite.flipX = true;
+    }
+    if ((keys[' '] || keys['ArrowUp']) && player.grounded) {
+      player.vy = player.jumpForce;
+      player.grounded = false;
+    }
+
+    player.vy += GRAVITY * dt;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+
+    // Tilemap collision
+    player.grounded = false;
+    const nearby = tilemap.getSolidTilesInRegion(
+      createAABB(player.x, player.y, player.width, player.height)
+    );
+    for (const tileBox of nearby) {
+      const depth = aabbOverlapDepth(
+        createAABB(player.x, player.y, player.width, player.height),
+        tileBox,
+      );
+      if (!depth) continue;
+      if (depth.y < depth.x) {
+        if (player.vy > 0) {
+          player.y -= depth.y; player.vy = 0;
+          player.grounded = true;
+        } else {
+          player.y += depth.y; player.vy = 0;
+        }
+      } else {
+        if (player.vx > 0) player.x -= depth.x;
+        else player.x += depth.x;
+        player.vx = 0;
+      }
+    }
+
+    // Animation
+    if (!player.grounded) animator.play('jump');
+    else if (player.vx !== 0) animator.play('run');
+    else animator.play('idle');
+    animator.update(dt);
+    heroSprite.position = Point(player.x - 2, player.y - 4);
+
+    // Parallax
+    sky.scroll(player.vx * dt);
+    hills.scroll(player.vx * dt);
+
+    // Draw
+    camera.follow({ x: player.x, y: player.y }, 0.08);
+    camera.clamp(tilemap.widthInPixels, tilemap.heightInPixels);
+
+    canvas.add(sky);
+    canvas.add(hills);
+    camera.begin(canvas.ctx);
+    canvas.add(tilemap);
+    canvas.add(heroSprite);
+    camera.end(canvas.ctx);
+  });
+}
+
+main();
+\`\`\`
+
+### React version
+
+See the **Crystal Caverns** playable game tutorial for a full React implementation using all these features with \`PivotCanvas\`, \`PivotSprite\`, \`PivotPlatform\`, \`PivotTilemap\`, and \`useGameLoop\`.
+        `,
+      },
+    ],
+  },
+  {
+    version: '1.0.x',
+    label: 'v1.0.x',
+    sections: [
+      {
+        id: 'overview',
+        title: 'v1.0.x Overview',
+        content: `
+## PivotX v1.0.x
+
+v1.0.x is the initial stable release of PivotX. It includes:
+
+- **Canvas** — create and manage an HTML5 canvas
+- **Shapes** — Circle, Rectangle, Line, Label
+- **Game loop** — \`canvas.startLoop((dt) => { ... })\`
+- **React layer** — \`PivotCanvas\`, \`PivotCircle\`, \`PivotRectangle\`, \`PivotLine\`, \`PivotLabel\`, \`useGameLoop\`
+
+### Installation
+
+\`\`\`bash
+npm i @colon-dev/pivotx@1.0
+\`\`\`
+
+### Vanilla JS
+
+\`\`\`html
+<script src="https://cdn.jsdelivr.net/npm/pivotx@1.0/dist/pivotx.umd.min.js"></script>
+<script>
+  var { Canvas, Circle, Rectangle, Line, Label, Point } = PivotX;
+  var canvas = new Canvas("game");
+  canvas.startLoop(function(dt) {
+    canvas.clear();
+    // draw shapes here
+  });
+</script>
+\`\`\`
+
+### React
+
+\`\`\`tsx
+import { PivotCanvas, PivotCircle, PivotRectangle, PivotLabel, useGameLoop } from 'pivotx/react';
+
+function Game() {
+  useGameLoop((dt) => { /* update state */ });
+  return (
+    <PivotCanvas width={600} height={400} background="#1a1a2e">
+      <PivotCircle center={{ x: 300, y: 200 }} radius={40} fill="tomato" />
+    </PivotCanvas>
+  );
+}
+\`\`\`
+
+### Upgrade to v1.2.x
+
+v1.2.x adds images, sprites, sprite animation, tilemaps, camera, parallax backgrounds, platforms, and AABB collision. See the **v1.2.x** docs for the full API.
+
+\`\`\`bash
+npm i @colon-dev/pivotx@latest
+\`\`\`
+        `,
+      },
+      {
+        id: 'core-api',
+        title: 'Core API Reference',
+        content: `
+## Core API (v1.0.x)
+
+### Canvas
+
+\`\`\`ts
+const canvas = new Canvas('game');           // attach to <canvas id="game">
+canvas.getWidth();                           // canvas width
+canvas.getHeight();                          // canvas height
+canvas.clear();                              // clear the canvas
+canvas.startLoop((dt) => { ... });           // start game loop (dt in seconds)
+\`\`\`
+
+### Shapes
+
+\`\`\`ts
+// Circle
+const c = new Circle(Point(100, 100), 40);
+c.fillColor = 'tomato';
+c.strokeColor = '#333';
+c.lineWidth = 2;
+canvas.add(c);
+
+// Rectangle
+const r = new Rectangle(Point(50, 50), 120, 80);
+r.fillColor = 'skyblue';
+canvas.add(r);
+
+// Line
+const l = new Line(Point(0, 0), Point(200, 150));
+l.strokeColor = 'crimson';
+l.lineWidth = 3;
+canvas.add(l);
+
+// Label
+const label = new Label('Score: 0', Point(300, 20), 'bold 20px Arial');
+label.fillColor = 'white';
+canvas.add(label);
+\`\`\`
+
+### React Components
+
+| Component | Key Props |
+|---|---|
+| \`PivotCanvas\` | \`width\`, \`height\`, \`background\` |
+| \`PivotCircle\` | \`center\`, \`radius\`, \`fill\`, \`stroke\`, \`lineWidth\` |
+| \`PivotRectangle\` | \`position\`, \`width\`, \`height\`, \`fill\`, \`stroke\` |
+| \`PivotLine\` | \`start\`, \`end\`, \`stroke\`, \`lineWidth\` |
+| \`PivotLabel\` | \`text\`, \`position\`, \`font\`, \`fill\`, \`textAlign\` |
+
+### useGameLoop
+
+\`\`\`tsx
+useGameLoop((dt) => {
+  // dt = seconds since last frame
+  // Update game state here, then trigger re-render
+  setTick(t => t + 1);
+});
 \`\`\`
         `,
       },

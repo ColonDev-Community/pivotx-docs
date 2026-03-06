@@ -12,6 +12,7 @@ import DungeonGame from './games/Dungeon';
 import CarGame from './games/CarRace';
 import Nexus2500Game from './games/Nexus2500';
 import AetherdriftGame from './games/Aetherdrift';
+import CrystalCavernsGame from './games/CrystalCaverns';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
 
       {/* Game routes — full screen, no header */}
       <Route path="/game/aetherdrift" element={<AetherdriftGame />} />
+      <Route path="/game/crystalcaverns" element={<CrystalCavernsGame />} />
       <Route path="/game/nexus2500" element={<Nexus2500Game />} />
       <Route path="/game/carrace" element={<CarGame />} />
       <Route path="/game/dungeon" element={<DungeonGame />} />

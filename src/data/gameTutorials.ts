@@ -1135,4 +1135,335 @@ if (sx + plat.width < -50 || sx > W + 50) return null;`,
       },
     ],
   },
+  {
+    id: 'crystalcaverns',
+    title: 'Crystal Caverns',
+    description: 'A tilemap-based platformer showcasing every new PivotX feature: tile collision, camera follow, parallax backgrounds, sprites, collectibles, and enemies.',
+    difficulty: 'intermediate',
+    tags: ['platformer', 'tilemap', 'camera', 'parallax', 'collision', 'sprites', 'collectibles'],
+    features: [
+      'Tilemap-based level with tile collision',
+      'Camera following the player with smooth lerp',
+      'Parallax scrolling backgrounds (3 layers)',
+      'Procedurally placed crystals & enemies',
+      'AABB collision with stomp-to-kill mechanics',
+      'Screen shake on damage',
+      'Particle effects (jump dust, land dust, crystal sparkle, damage)',
+      'HUD with health hearts, crystal counter, score, timer',
+      'Title screen, game over, and win screens',
+    ],
+    route: '/game/crystalcaverns',
+    conceptsCovered: [
+      'Tilemap collision using createTileCollider (point-based checks)',
+      'Camera system with smooth follow, world clamping, and screen shake',
+      'Parallax scrolling with depth-based offset',
+      'Entity factory pattern: createPlayer(), createSlime(), createBat(), createSpike()',
+      'Systems architecture: physics.ts, camera.ts, combat.ts, particles.ts, collectibles.ts',
+      'Game state machine (title → playing → gameover/win)',
+      'useRef for mutable game state, setTick for re-renders',
+      'Responsive canvas sizing with resize listener',
+      'useExitToMenu() hook for ESC → navigate home',
+    ],
+    codeBreakdown: [
+      {
+        title: '1. Types — Defining the Game World',
+        description: 'All interfaces live in types/index.ts. PlayerState tracks position, velocity, animation, health, and collectibles. Enemy has patrol behaviour. LevelData holds the tilemap grid, crystals, enemies, and world dimensions.',
+        code: `// types/index.ts (key types)
+
+export interface PlayerState {
+  x: number; y: number;
+  vx: number; vy: number;
+  width: number; height: number;
+  speed: number; jumpForce: number;
+  isGrounded: boolean; facingRight: boolean;
+  animState: 'idle' | 'run' | 'jump' | 'fall';
+  animFrame: number; animTimer: number;
+  crystals: number;
+  invincibleTimer: number;
+  health: number; maxHealth: number;
+}
+
+export interface LevelData {
+  platforms: PlatformData[];
+  crystals: Crystal[];
+  enemies: Enemy[];
+  playerStart: Vec2;
+  worldWidth: number; worldHeight: number;
+  tileMap: number[][];   // row-major, -1 = empty
+  tileSize: number;
+}
+
+export type GamePhase = 'title' | 'playing' | 'gameover' | 'win';`,
+        language: 'typescript',
+      },
+      {
+        title: '2. Constants — Tuning Values & Colors',
+        description: 'All magic numbers live in constants/index.ts. Physics values, player stats, tile size, camera smoothing, animation FPS, and the full colour palette are defined here for easy tuning.',
+        code: `// constants/index.ts (excerpts)
+
+export const GRAVITY = 1200;
+export const MAX_FALL_SPEED = 800;
+
+export const PLAYER_SPEED = 220;
+export const PLAYER_JUMP_FORCE = -480;
+export const PLAYER_WIDTH = 20;
+export const PLAYER_HEIGHT = 28;
+export const PLAYER_MAX_HEALTH = 3;
+
+export const TILE_SIZE = 32;
+export const CAMERA_SMOOTH = 0.08;
+
+export const CRYSTAL_COLORS = ['#e040fb', '#7c4dff', '#00e5ff', '#76ff03', '#ffd740'];
+export const SLIME_COLOR = '#66bb6a';
+export const BAT_COLOR = '#ab47bc';
+export const SPIKE_COLOR = '#ef5350';`,
+        language: 'typescript',
+      },
+      {
+        title: '3. Level Generator — Building the Tilemap',
+        description: 'levels/generator.ts builds a 50×18 tile grid. Ground tiles fill the bottom 2 rows, with gaps for pits. Floating platforms at 3 heights use addPlatformTiles(). Stone walls act as obstacles. Crystals and enemies are placed at specific tile coordinates.',
+        code: `// levels/generator.ts (simplified)
+
+export const SOLID_TILES = new Set([0, 1, 2, 3, 4, 5, 6, 7, 9]);
+
+export function generateLevel(level: number): LevelData {
+  const cols = 50, rows = 18;
+  const tileMap: number[][] = [];
+  for (let r = 0; r < rows; r++) tileMap.push(new Array(cols).fill(-1));
+
+  // Ground floor
+  for (let c = 0; c < cols; c++) {
+    tileMap[rows - 2][c] = 1; // ground top
+    tileMap[rows - 1][c] = 4; // ground fill
+  }
+
+  // Floating platforms
+  addPlatformTiles(tileMap, 5, 12, 5);
+  addPlatformTiles(tileMap, 14, 12, 4);
+
+  // Gaps in ground
+  for (let c = 11; c <= 13; c++) {
+    tileMap[rows - 2][c] = -1;
+    tileMap[rows - 1][c] = -1;
+  }
+
+  // Place crystals, enemies...
+  const crystals = [ /* ... */ ];
+  const enemies = [
+    createSlime(6 * TILE_SIZE, (rows - 3) * TILE_SIZE, 80),
+    createBat(12 * TILE_SIZE, 7 * TILE_SIZE, 100),
+    createSpike(11 * TILE_SIZE, (rows - 2) * TILE_SIZE - 12),
+  ];
+
+  return { tileMap, tileSize: TILE_SIZE, crystals, enemies,
+    playerStart: { x: 2 * TILE_SIZE, y: (rows - 3) * TILE_SIZE },
+    worldWidth: cols * TILE_SIZE, worldHeight: rows * TILE_SIZE,
+    platforms: [],
+  };
+}`,
+        language: 'typescript',
+      },
+      {
+        title: '4. Physics — Tilemap Collision Resolver',
+        description: 'systems/physics.ts creates a closure-based tile collider. Given the tilemap grid and solid tile set, it checks player feet, head, left, and right edges against tiles and returns adjusted coordinates plus collision flags.',
+        code: `// systems/physics.ts
+
+export function createTileCollider(
+  tileMap: number[][], solidTiles: Set<number>, tileSize: number,
+) {
+  const rows = tileMap.length;
+  const cols = tileMap[0]?.length || 0;
+
+  function isSolid(worldX: number, worldY: number): boolean {
+    const col = Math.floor(worldX / tileSize);
+    const row = Math.floor(worldY / tileSize);
+    if (row < 0 || row >= rows || col < 0 || col >= cols) return false;
+    return tileMap[row][col] >= 0 && solidTiles.has(tileMap[row][col]);
+  }
+
+  return function resolve(px: number, py: number, pw: number, ph: number) {
+    let landed = false, hitHead = false, hitWall = false;
+
+    // Check bottom (feet)
+    if (isSolid(px + 2, py + ph) || isSolid(px + pw - 2, py + ph)) {
+      py = Math.floor((py + ph) / tileSize) * tileSize - ph;
+      landed = true;
+    }
+    // Check top, left, right...
+    return { x: px, y: py, landed, hitHead, hitWall };
+  };
+}`,
+        language: 'typescript',
+      },
+      {
+        title: '5. Camera System — Smooth Follow & Shake',
+        description: 'systems/camera.ts provides a smooth-follow camera with screen shake. updateCamera() lerps toward the player position and clamps to world bounds. addScreenShake() adds intensity that decays each frame.',
+        code: `// systems/camera.ts
+
+export function updateCamera(
+  cam: CameraState, targetX: number, targetY: number,
+  viewW: number, viewH: number, worldW: number, worldH: number,
+): void {
+  cam.targetX = targetX - viewW / 2;
+  cam.targetY = targetY - viewH / 2;
+
+  cam.x += (cam.targetX - cam.x) * CAMERA_SMOOTH;
+  cam.y += (cam.targetY - cam.y) * CAMERA_SMOOTH;
+
+  cam.x = Math.max(0, Math.min(cam.x, worldW - viewW));
+  cam.y = Math.max(0, Math.min(cam.y, worldH - viewH));
+
+  if (cam.shakeAmount > 0.1) {
+    cam.shakeX = (Math.random() - 0.5) * cam.shakeAmount;
+    cam.shakeY = (Math.random() - 0.5) * cam.shakeAmount;
+    cam.shakeAmount *= CAMERA_SHAKE_DECAY;
+  } else {
+    cam.shakeX = cam.shakeY = cam.shakeAmount = 0;
+  }
+}
+
+export function worldToScreen(wx: number, wy: number, cam: CameraState) {
+  return { x: wx - cam.x + cam.shakeX, y: wy - cam.y + cam.shakeY };
+}`,
+        language: 'typescript',
+      },
+      {
+        title: '6. Player Entity — Factory & Update',
+        description: 'entities/Player.ts has createPlayer() (factory) and updatePlayer() (per-frame logic). Movement reads input, applies gravity, moves, then resolves tile collision. Animation state transitions between idle/run/jump/fall.',
+        code: `// entities/Player.ts
+
+export function createPlayer(x: number, y: number): PlayerState {
+  return {
+    x, y, vx: 0, vy: 0,
+    width: PLAYER_WIDTH, height: PLAYER_HEIGHT,
+    speed: PLAYER_SPEED, jumpForce: PLAYER_JUMP_FORCE,
+    isGrounded: false, facingRight: true,
+    animState: 'idle', animFrame: 0, animTimer: 0,
+    crystals: 0, invincibleTimer: 0,
+    health: PLAYER_MAX_HEALTH, maxHealth: PLAYER_MAX_HEALTH,
+  };
+}
+
+export function updatePlayer(
+  p: PlayerState, input: PlayerInput,
+  platforms: PlatformData[], tileCollider: Function, dt: number,
+): void {
+  p.vx = 0;
+  if (input.left) { p.vx = -p.speed; p.facingRight = false; }
+  if (input.right) { p.vx = p.speed; p.facingRight = true; }
+  if (input.jump && p.isGrounded) { p.vy = p.jumpForce; p.isGrounded = false; }
+
+  p.vy += GRAVITY * dt;
+  p.x += p.vx * dt;
+  p.y += p.vy * dt;
+
+  // Tile collision
+  const result = tileCollider(p.x, p.y, p.width, p.height);
+  p.x = result.x; p.y = result.y;
+  if (result.landed) { p.vy = 0; p.isGrounded = true; }
+}`,
+        language: 'typescript',
+      },
+      {
+        title: '7. Combat — Stomp vs Damage',
+        description: 'systems/combat.ts checks player-enemy overlap. If the player is falling and hitting the enemy\'s top 40%, it\'s a stomp (enemy dies, player bounces). Otherwise the player takes damage with knockback.',
+        code: `// systems/combat.ts
+
+export function checkEnemyDamage(
+  player: PlayerState, enemies: Enemy[], particles: Particle[],
+): boolean {
+  if (player.invincibleTimer > 0) return false;
+
+  for (const e of enemies) {
+    if (!e.active || !boxOverlap(player, e)) continue;
+
+    const isStomping = player.vy > 0 &&
+      (player.y + player.height) - e.y < e.height * 0.4;
+
+    if (isStomping && e.type !== 'spike') {
+      e.active = false;
+      player.vy = -250; // bounce up
+      spawnDamageParticles(particles, e.x + e.width / 2, e.y);
+      return false;
+    } else {
+      damagePlayer(player, e.damage);
+      player.vx = player.x < e.x ? -150 : 150; // knockback
+      return true;
+    }
+  }
+  return false;
+}`,
+        language: 'typescript',
+      },
+      {
+        title: '8. Main Hook — Orchestrating Everything',
+        description: 'hooks/useCrystalCaverns.ts wires all systems together. It manages refs for player, camera, enemies, crystals, particles, and the level. The game loop caps dt, processes input, updates player, enemies, combat, crystals, camera, and particles each frame.',
+        code: `// hooks/useCrystalCaverns.ts (game loop excerpt)
+
+useGameLoop((dt) => {
+  dt = Math.min(dt, 0.05); // cap delta time
+  if (gs.phase !== 'playing') { setTick(t => t + 1); return; }
+  gs.playTime += dt;
+
+  const input: PlayerInput = {
+    left:  keys.current['a'] || keys.current['arrowleft'],
+    right: keys.current['d'] || keys.current['arrowright'],
+    jump:  keys.current['w'] || keys.current['arrowup'] || keys.current[' '],
+  };
+
+  updatePlayer(p, input, [], tileCollider.current, dt);
+  updateEnemies(enemies.current, dt);
+
+  const tookDamage = checkEnemyDamage(p, enemies.current, particles.current);
+  if (tookDamage) addScreenShake(cam, 8);
+
+  const collected = updateCrystals(crystals.current, p, particles.current, dt);
+  if (collected > 0) gs.score += collected * 100;
+
+  if (crystals.current.every(c => c.collected)) gs.phase = 'win';
+  if (p.health <= 0) gs.phase = 'gameover';
+
+  updateCamera(cam, p.x + p.width/2, p.y + p.height/2, W, H, worldW, worldH);
+  updateParticles(particles.current, dt);
+  setTick(t => t + 1);
+});`,
+        language: 'typescript',
+      },
+      {
+        title: '9. Rendering — Tilemap, Entities, Parallax, HUD',
+        description: 'index.tsx reads all state from the hook and renders it. Background uses parallax layers (circles at different scroll depths). Tiles are rendered via a renderTile() switch. Enemies have type-specific renderers. The HUD draws health hearts, crystal count, score, and timer in screen space.',
+        code: `// index.tsx (rendering excerpt)
+
+const parallax = (depth: number) => -(cam.x * depth) % W;
+
+// Parallax mountains (far)
+{[0, 1, 2].map(i => {
+  const px = parallax(0.1) + i * 400 - 200;
+  return <PivotCircle center={{ x: px + 200, y: H * 0.65 }}
+    radius={160 + i * 30} fill="#1a2a3a" />;
+})}
+
+// Tilemap rendering (with viewport culling)
+{levelData.tileMap.map((row, rowIdx) =>
+  row.map((tile, colIdx) => {
+    if (tile < 0) return null;
+    const pos = worldToScreen(colIdx * TILE_SIZE, rowIdx * TILE_SIZE);
+    if (pos.x < -TILE_SIZE || pos.x > W + TILE_SIZE) return null;
+    return renderTile(tile, pos.x, pos.y, TILE_SIZE, rowIdx, colIdx);
+  })
+)}
+
+// HUD (screen space)
+<PivotRectangle position={{ x: 0, y: 0 }} width={W} height={44}
+  fill={HUD_BG_COLOR} />
+{Array.from({ length: p.maxHealth }).map((_, i) => (
+  <PivotCircle center={{ x: 24 + i * 28, y: 22 }} radius={10}
+    fill={i < p.health ? HEALTH_FULL_COLOR : HEALTH_EMPTY_COLOR} />
+))}
+<PivotLabel text={\`💎 \${p.crystals} / \${gs.totalCrystals}\`}
+  position={{ x: 140, y: 22 }} fill="#e040fb" />`,
+        language: 'tsx',
+      },
+    ],
+  },
 ];

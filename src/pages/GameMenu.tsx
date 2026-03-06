@@ -8,6 +8,7 @@ import {
 
 const games = [
   { id: 'nexus2500', title: 'NEXUS 2500: The Last Signal', description: '25th century epic — 5 chapters, bosses, full storyline. Humanity\'s last hope!' },
+  { id: 'crystalcaverns', title: 'Crystal Caverns', description: 'Platformer — tilemap levels, camera follow, parallax, sprites & collectibles!' },
   { id: 'carrace', title: 'Nitro Highway', description: 'Endless police chase racing - dodge traffic, nitro boost, wanted levels!' },
   { id: 'dungeon', title: 'Dungeon of Shadows', description: 'Roguelike dungeon crawler - procedural dungeons, bosses & loot!' },
   { id: 'spaceshooter', title: 'Space Shooter', description: 'Full combat game with enemies and power-ups' },
