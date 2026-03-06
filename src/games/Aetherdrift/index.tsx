@@ -70,6 +70,7 @@ export default function AetherdriftGame() {
   const playerVisible = p.invincibleTimer <= 0 || Math.floor(p.invincibleTimer * 15) % 2 === 0;
 
   return (
+    <div style={{ margin: 0, padding: 0, overflow: 'hidden', background: realm.bgGradient[0], width: '100vw', height: '100vh' }}>
     <PivotCanvas width={W} height={H} background={realm.bgGradient[0]}>
 
       {/* ══════════════ BACKGROUND LAYERS ══════════════ */}
@@ -844,5 +845,6 @@ export default function AetherdriftGame() {
       )}
 
     </PivotCanvas>
+    </div>
   );
 }

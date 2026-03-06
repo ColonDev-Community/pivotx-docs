@@ -58,6 +58,7 @@ export default function CrystalCavernsGame() {
   const playerVisible = p.invincibleTimer <= 0 || Math.floor(p.invincibleTimer * 12) % 2 === 0;
 
   return (
+    <div style={{ margin: 0, padding: 0, overflow: 'hidden', background: BG_COLOR, width: '100vw', height: '100vh' }}>
     <PivotCanvas width={W} height={H} background={BG_COLOR}>
 
       {/* ══════════════ BACKGROUND ══════════════ */}
@@ -325,6 +326,7 @@ export default function CrystalCavernsGame() {
       )}
 
     </PivotCanvas>
+    </div>
   );
 }
 
