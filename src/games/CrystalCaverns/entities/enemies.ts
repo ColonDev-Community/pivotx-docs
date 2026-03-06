@@ -3,7 +3,7 @@
  * Enemy creation and update logic
  */
 
-import { Enemy, EnemyType } from '../types';
+import { Enemy } from '../types';
 import { SLIME_COLOR, BAT_COLOR, SPIKE_COLOR } from '../constants';
 
 // ─── Factory Functions ───────────────────────────────────────────────────────
