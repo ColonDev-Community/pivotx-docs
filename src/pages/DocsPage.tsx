@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DOC_VERSIONS } from '../data/docs';
 
@@ -179,9 +179,7 @@ export default function DocsPage() {
   const navigate = useNavigate();
   const { version: urlVersion, sectionId } = useParams();
 
-  const [selectedVersion, setSelectedVersion] = useState(
-    urlVersion || DOC_VERSIONS[0].version
-  );
+  const selectedVersion = urlVersion || DOC_VERSIONS[0].version;
 
   const currentDocs = DOC_VERSIONS.find(v => v.version === selectedVersion) || DOC_VERSIONS[0];
   const activeSection = sectionId
@@ -189,7 +187,6 @@ export default function DocsPage() {
     : currentDocs.sections[0];
 
   const handleVersionChange = (version: string) => {
-    setSelectedVersion(version);
     navigate(`/docs/${version}`);
   };
 
