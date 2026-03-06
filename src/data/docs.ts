@@ -1664,59 +1664,384 @@ See the **Crystal Caverns** playable game tutorial for a full React implementati
     label: 'v1.0.x',
     sections: [
       {
-        id: 'overview',
-        title: 'v1.0.x Overview',
+        id: 'getting-started',
+        title: 'Getting Started',
         content: `
-## PivotX v1.0.x
+## Getting Started with PivotX
 
-v1.0.x is the initial stable release of PivotX. It includes:
+PivotX is a lightweight 2D game development library. One package, three ways to use it:
 
-- **Canvas** — create and manage an HTML5 canvas
-- **Shapes** — Circle, Rectangle, Line, Label
-- **Game loop** — \`canvas.startLoop((dt) => { ... })\`
-- **React layer** — \`PivotCanvas\`, \`PivotCircle\`, \`PivotRectangle\`, \`PivotLine\`, \`PivotLabel\`, \`useGameLoop\`
+| Target | Import style | Build required? |
+|---|---|---|
+| \`Vanilla JS\` | \`<script src="cdn">\` then \`window.PivotX\` | No |
+| \`TypeScript\` | \`import { Canvas } from 'pivotx'\` | Yes (your project) |
+| \`React\` | \`import { PivotCanvas } from 'pivotx/react'\` | Yes (your project) |
 
 ### Installation
 
 \`\`\`bash
 npm i @colon-dev/pivotx@1.0
+# or
+yarn add @colon-dev/pivotx@1.0
 \`\`\`
 
-### Vanilla JS
+Or via CDN (no npm, no build step):
+
+\`\`\`html
+<!-- Minified — for production -->
+<script src="https://cdn.jsdelivr.net/npm/pivotx@1.0/dist/pivotx.umd.min.js"></script>
+
+<!-- Unminified — for development -->
+<script src="https://cdn.jsdelivr.net/npm/pivotx@1.0/dist/pivotx.umd.js"></script>
+\`\`\`
+
+> **Upgrade available:** v1.2.x adds images, sprites, sprite animation, tilemaps, camera, parallax backgrounds, platforms, and AABB collision. See the **v1.2.x** docs for details.
+>
+> \`npm i @colon-dev/pivotx@latest\`
+        `,
+        subsections: [
+          {
+            id: 'prerequisites',
+            title: 'Prerequisites',
+            content: `
+### Prerequisites
+
+**For Vanilla JS (CDN):**
+- A modern browser — that's it! No Node, no build tools.
+
+**For TypeScript / React:**
+- **Node.js** 16+ and npm/yarn
+- **TypeScript** 4.5+ (recommended)
+- **React** 18+ (only for the React layer)
+
+### Build Outputs
+
+After \`npm run build\`, the \`dist/\` folder contains:
+
+| File | Format | Use case |
+|---|---|---|
+| \`pivotx.umd.js\` | UMD | \`<script>\` tag, dev (unminified + source maps) |
+| \`pivotx.umd.min.js\` | UMD | \`<script>\` tag, production / CDN |
+| \`pivotx.esm.js\` | ESM | \`import\` in bundlers / TypeScript |
+| \`pivotx.cjs.js\` | CJS | \`require()\` in Node / older toolchains |
+| \`react.esm.js\` | ESM | React components + hooks |
+| \`react.cjs.js\` | CJS | React (CommonJS) |
+| \`index.d.ts\` | types | TypeScript types for core |
+| \`react.d.ts\` | types | TypeScript types for React layer |
+            `,
+          },
+        ],
+      },
+      {
+        id: 'vanilla-js',
+        title: 'Vanilla JS Guide',
+        content: `
+## Vanilla JS — No Build Step Required
+
+Drop one \`<script>\` tag in your HTML and everything is on \`window.PivotX\`. No npm, no webpack, no React.
+
+### Complete Example
+
+\`\`\`html
+<!DOCTYPE html>
+<html>
+<head><title>My PivotX Game</title></head>
+<body>
+  <canvas id="game" width="600" height="400"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/pivotx@1.0/dist/pivotx.umd.min.js"></script>
+  <script>
+    var { Canvas, Circle, Rectangle, Line, Label, Point } = PivotX;
+
+    var canvas = new Canvas("game");
+    var W = canvas.getWidth();
+    var H = canvas.getHeight();
+
+    var ball = { x: W/2, y: H/2, r: 24, vx: 200, vy: 150 };
+
+    canvas.startLoop(function(dt) {
+      canvas.clear();
+
+      // Background
+      var bg = new Rectangle(Point(0, 0), W, H);
+      bg.fillColor = "#1a1a2e";
+      canvas.add(bg);
+
+      // Update ball position
+      ball.x += ball.vx * dt;
+      ball.y += ball.vy * dt;
+      if (ball.x < ball.r || ball.x > W - ball.r) ball.vx *= -1;
+      if (ball.y < ball.r || ball.y > H - ball.r) ball.vy *= -1;
+
+      // Draw ball
+      var circle = new Circle(Point(ball.x, ball.y), ball.r);
+      circle.fillColor   = "#e94560";
+      circle.strokeColor = "white";
+      circle.lineWidth   = 2;
+      canvas.add(circle);
+
+      // Draw label
+      var label = new Label("Bouncing Ball", Point(W/2, 30), "bold 20px Arial");
+      label.fillColor = "white";
+      label.textAlign = "center";
+      canvas.add(label);
+    });
+  </script>
+</body>
+</html>
+\`\`\`
+
+### Step-by-Step Breakdown
+
+**1. Add the \`<canvas>\` element:**
+
+\`\`\`html
+<canvas id="game" width="600" height="400"></canvas>
+\`\`\`
+
+**2. Include the PivotX script:**
 
 \`\`\`html
 <script src="https://cdn.jsdelivr.net/npm/pivotx@1.0/dist/pivotx.umd.min.js"></script>
-<script>
-  var { Canvas, Circle, Rectangle, Line, Label, Point } = PivotX;
-  var canvas = new Canvas("game");
-  canvas.startLoop(function(dt) {
-    canvas.clear();
-    // draw shapes here
-  });
-</script>
 \`\`\`
 
-### React
+**3. Destructure from \`window.PivotX\`:**
 
-\`\`\`tsx
-import { PivotCanvas, PivotCircle, PivotRectangle, PivotLabel, useGameLoop } from 'pivotx/react';
-
-function Game() {
-  useGameLoop((dt) => { /* update state */ });
-  return (
-    <PivotCanvas width={600} height={400} background="#1a1a2e">
-      <PivotCircle center={{ x: 300, y: 200 }} radius={40} fill="tomato" />
-    </PivotCanvas>
-  );
-}
+\`\`\`js
+var { Canvas, Circle, Rectangle, Line, Label, Point } = PivotX;
 \`\`\`
 
-### Upgrade to v1.2.x
+**4. Create a Canvas and start the loop:**
 
-v1.2.x adds images, sprites, sprite animation, tilemaps, camera, parallax backgrounds, platforms, and AABB collision. See the **v1.2.x** docs for the full API.
+\`\`\`js
+var canvas = new Canvas("game");  // pass the canvas element's id
+canvas.startLoop(function(dt) {
+  canvas.clear();         // clear the screen each frame
+  // ... create shapes, update positions, add to canvas
+});
+\`\`\`
+
+### Drawing WITHOUT a Game Loop
+
+If you just want to draw a static scene (no animation), skip \`startLoop\` and call \`canvas.add()\` directly:
+
+\`\`\`js
+var { Canvas, Circle, Rectangle, Label, Point } = PivotX;
+var canvas = new Canvas("game");
+
+// Draw background
+var bg = new Rectangle(Point(0, 0), 600, 400);
+bg.fillColor = "#1a1a2e";
+canvas.add(bg);
+
+// Draw shapes
+var sun = new Circle(Point(500, 60), 40);
+sun.fillColor = "#FFD700";
+canvas.add(sun);
+
+var ground = new Rectangle(Point(0, 300), 600, 100);
+ground.fillColor = "#228B22";
+canvas.add(ground);
+
+var title = new Label("My Scene", Point(300, 30), "bold 24px Arial");
+title.fillColor = "white";
+title.textAlign = "center";
+canvas.add(title);
+\`\`\`
+
+### Keyboard Input (Vanilla JS)
+
+\`\`\`js
+var keys = {};
+document.addEventListener("keydown", function(e) { keys[e.key] = true; });
+document.addEventListener("keyup",   function(e) { keys[e.key] = false; });
+
+canvas.startLoop(function(dt) {
+  canvas.clear();
+  if (keys["ArrowLeft"])  player.x -= 200 * dt;
+  if (keys["ArrowRight"]) player.x += 200 * dt;
+  if (keys["ArrowUp"])    player.y -= 200 * dt;
+  if (keys["ArrowDown"])  player.y += 200 * dt;
+  // ... draw player
+});
+\`\`\`
+
+### Mouse Input (Vanilla JS)
+
+\`\`\`js
+var mouse = { x: 0, y: 0, down: false };
+var canvasEl = document.getElementById("game");
+
+canvasEl.addEventListener("mousemove", function(e) {
+  var rect = canvasEl.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
+});
+canvasEl.addEventListener("mousedown", function() { mouse.down = true;  });
+canvasEl.addEventListener("mouseup",   function() { mouse.down = false; });
+
+canvas.startLoop(function(dt) {
+  canvas.clear();
+  // Draw a circle at mouse position
+  var cursor = new Circle(Point(mouse.x, mouse.y), 10);
+  cursor.fillColor = mouse.down ? "red" : "white";
+  canvas.add(cursor);
+});
+\`\`\`
+        `,
+      },
+      {
+        id: 'typescript',
+        title: 'TypeScript Guide',
+        content: `
+## TypeScript — Typed Game Development
+
+Import PivotX classes directly with full type safety. No React required.
+
+### Installation
 
 \`\`\`bash
-npm i @colon-dev/pivotx@latest
+npm i @colon-dev/pivotx@1.0
+# or
+yarn add @colon-dev/pivotx@1.0
+\`\`\`
+
+### Complete Example
+
+\`\`\`ts
+import { Canvas, Circle, Rectangle, Line, Label, Point } from 'pivotx';
+import type { IPoint } from 'pivotx';
+
+const canvas = new Canvas('game');
+const W      = canvas.getWidth();
+const H      = canvas.getHeight();
+
+interface Ball {
+  pos: IPoint;
+  vel: IPoint;
+  radius: number;
+}
+
+const ball: Ball = {
+  pos:    Point(W / 2, H / 2),
+  vel:    Point(220, 160),
+  radius: 24,
+};
+
+canvas.startLoop((dt: number) => {
+  canvas.clear();
+
+  // Background
+  const bg       = new Rectangle(Point(0, 0), W, H);
+  bg.fillColor   = '#1a1a2e';
+  canvas.add(bg);
+
+  // Physics
+  ball.pos.x += ball.vel.x * dt;
+  ball.pos.y += ball.vel.y * dt;
+  if (ball.pos.x < ball.radius || ball.pos.x > W - ball.radius) ball.vel.x *= -1;
+  if (ball.pos.y < ball.radius || ball.pos.y > H - ball.radius) ball.vel.y *= -1;
+
+  // Render
+  const shape       = new Circle(ball.pos, ball.radius);
+  shape.fillColor   = '#e94560';
+  shape.strokeColor = 'white';
+  shape.lineWidth   = 2;
+  canvas.add(shape);
+});
+\`\`\`
+
+### Type Safety
+
+TypeScript will catch wrong types at compile time:
+
+\`\`\`ts
+circle.radius = "big";        // Error: Type 'string' is not assignable to type 'number'
+new Canvas(42);               // Error: Argument of type 'number' is not assignable to 'string'
+new Circle("center", 10);    // Error: expected IPoint, got string
+\`\`\`
+
+### Available Types
+
+\`\`\`ts
+import type { IPoint, IDrawable, IShape, CSSColor, LoopCallback } from 'pivotx';
+\`\`\`
+
+| Type | Description |
+|------|-------------|
+| \`IPoint\` | \`{ x: number, y: number }\` — coordinate object |
+| \`IDrawable\` | Interface with \`tag\` and \`draw(ctx)\` — anything the canvas can render |
+| \`IShape\` | Extends \`IDrawable\` — adds \`fillColor\`, \`strokeColor\`, \`lineWidth\` |
+| \`CSSColor\` | \`string\` alias — any valid CSS color value |
+| \`LoopCallback\` | \`(dt: number) => void\` — game loop callback type |
+
+### Custom Shapes (TypeScript)
+
+Implement \`IDrawable\` to create your own shapes:
+
+\`\`\`ts
+import { Canvas, Point } from 'pivotx';
+import type { IDrawable } from 'pivotx';
+
+class Star implements IDrawable {
+  readonly tag = 'star';
+
+  constructor(
+    public cx: number, public cy: number,
+    public points: number,
+    public outer: number, public inner: number,
+    public color = 'gold'
+  ) {}
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    const step = Math.PI / this.points;
+    ctx.beginPath();
+    for (let i = 0; i < 2 * this.points; i++) {
+      const r   = i % 2 === 0 ? this.outer : this.inner;
+      const ang = i * step - Math.PI / 2;
+      i === 0
+        ? ctx.moveTo(this.cx + Math.cos(ang) * r, this.cy + Math.sin(ang) * r)
+        : ctx.lineTo(this.cx + Math.cos(ang) * r, this.cy + Math.sin(ang) * r);
+    }
+    ctx.closePath();
+    ctx.fillStyle = this.color;
+    ctx.fill();
+  }
+}
+
+const canvas = new Canvas('game');
+canvas.add(new Star(300, 200, 5, 60, 25, '#FFD700'));
+\`\`\`
+
+### Stopping the Loop
+
+\`\`\`ts
+canvas.startLoop((dt) => {
+  // game logic...
+  if (gameOver) {
+    canvas.stopLoop();  // stops the rAF loop
+  }
+});
+\`\`\`
+
+### Accessing the Raw Context
+
+For advanced rendering beyond built-in shapes:
+
+\`\`\`ts
+const ctx = canvas.ctx;  // CanvasRenderingContext2D
+
+// Use raw canvas API alongside PivotX shapes
+canvas.startLoop((dt) => {
+  canvas.clear();
+  canvas.add(myShape);
+
+  // Custom gradient
+  const grad = ctx.createLinearGradient(0, 0, 600, 0);
+  grad.addColorStop(0, 'red');
+  grad.addColorStop(1, 'blue');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 380, 600, 20);
+});
 \`\`\`
         `,
       },
@@ -1724,64 +2049,259 @@ npm i @colon-dev/pivotx@latest
         id: 'core-api',
         title: 'Core API Reference',
         content: `
-## Core API (v1.0.x)
+## Core API Reference
+
+These classes and functions are available in all modes (Vanilla JS, TypeScript, React).
+
+### Point(x, y)
+
+Creates a plain \`{ x, y }\` coordinate object. Used everywhere positions are needed.
+
+\`\`\`js
+var p = Point(100, 200);
+// p.x === 100, p.y === 200
+\`\`\`
 
 ### Canvas
 
-\`\`\`ts
-const canvas = new Canvas('game');           // attach to <canvas id="game">
-canvas.getWidth();                           // canvas width
-canvas.getHeight();                          // canvas height
-canvas.clear();                              // clear the canvas
-canvas.startLoop((dt) => { ... });           // start game loop (dt in seconds)
+Wraps a \`<canvas>\` DOM element.
+
+\`\`\`js
+var canvas = new Canvas("myCanvasId");
 \`\`\`
 
-### Shapes
+| Method | Returns | Description |
+|---|---|---|
+| \`getWidth()\` | \`number\` | Canvas width in pixels |
+| \`getHeight()\` | \`number\` | Canvas height in pixels |
+| \`getCenter()\` | \`IPoint\` | Centre point of the canvas |
+| \`clear()\` | \`void\` | Erase everything — call at start of each frame |
+| \`add(shape)\` | \`void\` | Draw any \`IDrawable\` immediately |
+| \`startLoop(fn)\` | \`void\` | Start rAF loop, \`fn(dt)\` called each frame |
+| \`stopLoop()\` | \`void\` | Stop the running loop |
+| \`ctx\` | \`CanvasRenderingContext2D\` | Raw 2D context for advanced use |
 
-\`\`\`ts
-// Circle
-const c = new Circle(Point(100, 100), 40);
-c.fillColor = 'tomato';
-c.strokeColor = '#333';
-c.lineWidth = 2;
+### Circle
+
+\`\`\`js
+var c = new Circle(Point(x, y), radius);
+c.fillColor   = "#e94560";
+c.strokeColor = "white";
+c.lineWidth   = 2;
 canvas.add(c);
-
-// Rectangle
-const r = new Rectangle(Point(50, 50), 120, 80);
-r.fillColor = 'skyblue';
-canvas.add(r);
-
-// Line
-const l = new Line(Point(0, 0), Point(200, 150));
-l.strokeColor = 'crimson';
-l.lineWidth = 3;
-canvas.add(l);
-
-// Label
-const label = new Label('Score: 0', Point(300, 20), 'bold 20px Arial');
-label.fillColor = 'white';
-canvas.add(label);
 \`\`\`
 
-### React Components
+| Property | Type | Description |
+|---|---|---|
+| \`centerPoint\` | \`IPoint\` | Centre position |
+| \`radius\` | \`number\` | Radius in pixels |
+| \`fillColor\` | \`string / null\` | CSS fill colour |
+| \`strokeColor\` | \`string / null\` | CSS outline colour |
+| \`lineWidth\` | \`number\` | Outline thickness |
 
-| Component | Key Props |
-|---|---|
-| \`PivotCanvas\` | \`width\`, \`height\`, \`background\` |
-| \`PivotCircle\` | \`center\`, \`radius\`, \`fill\`, \`stroke\`, \`lineWidth\` |
-| \`PivotRectangle\` | \`position\`, \`width\`, \`height\`, \`fill\`, \`stroke\` |
-| \`PivotLine\` | \`start\`, \`end\`, \`stroke\`, \`lineWidth\` |
-| \`PivotLabel\` | \`text\`, \`position\`, \`font\`, \`fill\`, \`textAlign\` |
+### Rectangle
+
+\`\`\`js
+var r = new Rectangle(Point(x, y), width, height);
+r.fillColor = "#0f3460";
+canvas.add(r);
+\`\`\`
+
+\`Point(x, y)\` is the **top-left corner**.
+
+| Property | Type | Description |
+|---|---|---|
+| \`position\` | \`IPoint\` | Top-left corner |
+| \`width\` | \`number\` | Width in pixels |
+| \`height\` | \`number\` | Height in pixels |
+| \`fillColor\` | \`string / null\` | CSS fill colour |
+| \`strokeColor\` | \`string / null\` | CSS outline colour |
+| \`lineWidth\` | \`number\` | Outline thickness |
+
+### Line
+
+\`\`\`js
+var l = new Line(Point(x1, y1), Point(x2, y2));
+l.strokeColor = "#ffffff";
+l.lineWidth   = 2;
+canvas.add(l);
+\`\`\`
+
+| Property | Type | Description |
+|---|---|---|
+| \`startPoint\` | \`IPoint\` | Start coordinate |
+| \`endPoint\` | \`IPoint\` | End coordinate |
+| \`strokeColor\` | \`string\` | Line colour |
+| \`lineWidth\` | \`number\` | Line thickness |
+
+### Label
+
+\`\`\`js
+var l = new Label("text", Point(x, y), "20px Arial");
+l.fillColor = "white";
+l.textAlign = "center";
+canvas.add(l);
+\`\`\`
+
+\`font\` is optional, defaults to \`"16px Arial"\`.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| \`text\` | \`string\` | — | Text to display |
+| \`position\` | \`IPoint\` | — | Anchor point |
+| \`font\` | \`string\` | \`"16px Arial"\` | CSS font string |
+| \`fillColor\` | \`string\` | \`"#000"\` | Text colour |
+| \`textAlign\` | \`"left" / "center" / "right"\` | \`"center"\` | Horizontal anchor |
+| \`textBaseline\` | \`"top" / "middle" / "bottom"\` | \`"middle"\` | Vertical anchor |
+        `,
+      },
+      {
+        id: 'react-components',
+        title: 'React Components',
+        content: `
+## React Components
+
+Import from \`pivotx/react\`. These are declarative wrappers around the core classes.
+
+### PivotCanvas
+
+The root component. All shape components must be inside it.
+
+\`\`\`tsx
+<PivotCanvas width={800} height={600} background="#1a1a2e">
+  {/* children */}
+</PivotCanvas>
+\`\`\`
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| \`width\` | \`number\` | \`600\` | Width in pixels |
+| \`height\` | \`number\` | \`400\` | Height in pixels |
+| \`background\` | \`string\` | transparent | CSS background |
+| \`ref\` | \`PivotCanvasHandle\` | — | Access \`.ctx\`, \`.element\`, \`.clear()\` |
+
+### PivotCircle
+
+\`\`\`tsx
+<PivotCircle
+  center={{ x: 200, y: 150 }}
+  radius={30}
+  fill="#00ff00"
+  stroke="#ffffff"
+  lineWidth={1}
+/>
+\`\`\`
+
+### PivotRectangle
+
+\`\`\`tsx
+<PivotRectangle
+  position={{ x: 10, y: 20 }}
+  width={100}
+  height={50}
+  fill="#ff0000"
+  stroke="#ffffff"
+  lineWidth={2}
+/>
+\`\`\`
+
+### PivotLine
+
+\`\`\`tsx
+<PivotLine
+  start={{ x: 0, y: 0 }}
+  end={{ x: 100, y: 100 }}
+  stroke="#ffffff"
+  lineWidth={2}
+/>
+\`\`\`
+
+### PivotLabel
+
+\`\`\`tsx
+<PivotLabel
+  text="Hello PivotX!"
+  position={{ x: 400, y: 50 }}
+  font="bold 24px Arial"
+  fill="#ffffff"
+  textAlign="center"
+/>
+\`\`\`
+
+### Prop Mapping
+
+React components use simplified prop names that map to class properties:
+
+| React Prop | Class Property | Used On |
+|---|---|---|
+| \`fill\` | \`fillColor\` | Circle, Rectangle, Label |
+| \`stroke\` | \`strokeColor\` | Circle, Rectangle, Line |
+| \`center\` | \`centerPoint\` | Circle |
+| \`start\` | \`startPoint\` | Line |
+| \`end\` | \`endPoint\` | Line |
+| \`position\` | \`position\` | Rectangle, Label |
+        `,
+      },
+      {
+        id: 'react-hooks',
+        title: 'React Hooks',
+        content: `
+## React Hooks
 
 ### useGameLoop
 
+Starts an rAF loop for the lifetime of the component. Stops automatically on unmount.
+
 \`\`\`tsx
-useGameLoop((dt) => {
-  // dt = seconds since last frame
-  // Update game state here, then trigger re-render
-  setTick(t => t + 1);
+import { useGameLoop } from 'pivotx/react';
+
+useGameLoop((dt: number) => {
+  // dt = seconds since last frame (~0.016 at 60fps)
+  position.current.x += velocity * dt;
+  setTick(t => t + 1); // Force re-render
 });
 \`\`\`
+
+**Key points:**
+- \`dt\` is capped to prevent large jumps when tab is inactive
+- The loop automatically starts/stops with component lifecycle
+- Use \`useRef\` for mutable game state to avoid stale closures
+
+### Custom Hooks Pattern
+
+PivotX games typically extract all logic into a custom hook:
+
+\`\`\`tsx
+function useMyGame(onExit: () => void) {
+  const player = useRef({ x: 0, y: 0 });
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onExit();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onExit]);
+
+  useGameLoop((dt) => {
+    // Update logic here
+    setTick(t => t + 1);
+  });
+
+  return { player: player.current };
+}
+\`\`\`
+
+### React vs Vanilla — Which to Choose?
+
+| Feature | Vanilla JS / TypeScript | React |
+|---|---|---|
+| Setup | \`<script>\` tag or \`npm install\` | \`npm install\` + React project |
+| Rendering | Imperative: \`canvas.add(shape)\` | Declarative: \`<PivotCircle />\` |
+| Game Loop | \`canvas.startLoop(fn)\` | \`useGameLoop(fn)\` |
+| State | Plain variables / objects | \`useRef\` + \`useState\` |
+| Best for | Quick prototypes, non-React projects | React apps, complex UIs |
         `,
       },
     ],
