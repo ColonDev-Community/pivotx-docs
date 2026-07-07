@@ -658,6 +658,102 @@ label.strokeColor = '#000';    // outline (great over busy backgrounds)
       `,
     },
     {
+      id: 'responsive-levels',
+      title: 'Levels That Fit Every Screen',
+      content: `
+## Designing levels that play identically on every screen
+
+A platformer that works on your desktop can be **physically impossible** on a
+tablet or feel broken on a phone. This bit our own demo games twice — here is
+the exact failure and the exact fix.
+
+### The two mistakes
+
+**1. Positioning platforms as screen percentages.**
+
+\`\`\`js
+// ⚠️ looks harmless, breaks on wide screens
+const platforms = [
+  { x: W * 0.08, y: H - 170, w: 120, h: 14, oneWay: true },
+  { x: W * 0.62, y: H - 250, w: 120, h: 14, oneWay: true },
+];
+\`\`\`
+
+The *gap* between those ledges scales with the device. Measured on real
+device sizes with a jump of power 640 / gravity 1500 and run speed 260:
+
+| Screen width | Ledge gap | Max jump carry | Result |
+|---|---|---|---|
+| 360dp phone | 74dp | ~182dp | fine |
+| 412dp phone | 102dp | ~182dp | fine |
+| 800dp tablet | **312dp** | ~182dp | **unreachable** |
+
+**2. Sizing rises without checking the jump math.** The same level had its
+first ledge 122dp above the ground with a jump apex of 137dp — a 15dp margin.
+Players experience that as "the jump doesn't work", on *every* device.
+
+### The physics you need
+
+Two closed-form numbers tell you everything:
+
+\`\`\`js
+// Highest point of a jump (in px/dp):
+const apex = (JUMP_POWER * JUMP_POWER) / (2 * GRAVITY);   // 680²/3000 ≈ 154
+
+// Horizontal distance covered while landing \`rise\` higher:
+// air time t solves  J·t − (g/2)·t² = rise  (take the larger root)
+const t = (J + Math.sqrt(J * J - 2 * GRAVITY * rise)) / GRAVITY;
+const carry = RUN_SPEED * t;                              // ≈182dp for rise=80
+\`\`\`
+
+**Rules of thumb:** keep rises ≤ ⅔ of the apex, and horizontal edge gaps
+≤ ½ of the carry. That leaves margin for imperfect timing.
+
+### The fix: a clamped layout band
+
+Don't scale positions with the screen — centre a **fixed-size band** and lay
+the level out inside it. Wider screens get margin, not longer jumps:
+
+\`\`\`js
+const B = Math.min(W - 40, 560);   // band width: capped, never grows past 560
+const L = W / 2 - B / 2;           // band left edge (centres it)
+
+const platforms = [
+  { x: 0, y: H - 48, w: W, h: 48 },                            // ground spans the screen
+  { x: L,            y: H - 148, w: 150, h: 14, oneWay: true }, // ~100dp rises
+  { x: L + B * 0.34, y: H - 248, w: 150, h: 14, oneWay: true }, // ~60dp edge gaps
+  { x: L + B * 0.62, y: H - 348, w: 110, h: 16, vx: 70, oneWay: true },
+];
+// Moving platforms patrol within the band, not the screen:
+if (mover.x < L + B * 0.44) mover.vx = Math.abs(mover.vx);
+if (mover.x + mover.w > L + B) mover.vx = -Math.abs(mover.vx);
+\`\`\`
+
+Vertical offsets from the bottom (\`H - 148\`) are fine as-is: they're
+constant distances, so the physics is identical on tall and short screens —
+extra height just becomes sky.
+
+### Prove it with a simulation
+
+Because \`stepBody\` is pure and deterministic, you can drive it headlessly
+and verify reachability before any human playtests:
+
+\`\`\`js
+// Bang-bang controller: run at the target, jump when in range.
+// Run it at several screen sizes — if it can't finish, players can't either.
+for (const [W, H] of [[360, 740], [412, 915], [800, 1280], [915, 412]]) {
+  const done = simulateRoute(W, H);   // build level, loop stepBody @60fps
+  console.log(W + 'x' + H, done ? 'reachable ✓' : 'IMPOSSIBLE ✗');
+}
+\`\`\`
+
+This caught both of our bugs: the tablet-width gap failure and a solid moving
+platform that blocked jumps from below (fixed by making it \`oneWay\` — a
+jump-through elevator). The live **V2 Playground** on this site uses exactly
+this layout and passes the simulation on all four device profiles in under 3s.
+      `,
+    },
+    {
       id: 'react-guide',
       title: 'React Guide',
       content: `

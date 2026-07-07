@@ -85,6 +85,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://pivotx.colondev.com/docs/2.0.0/responsive-levels</loc>
+    <lastmod>2026-07-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://pivotx.colondev.com/docs/2.0.0/react-guide</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>monthly</changefreq>

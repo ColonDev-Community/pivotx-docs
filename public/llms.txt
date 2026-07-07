@@ -29,6 +29,7 @@ CDN: `https://cdn.jsdelivr.net/npm/@colon-dev/pivotx@2/dist/pivotx.umd.min.js`
 - [Game Utilities](https://pivotx.colondev.com/docs/2.0.0/game-utilities): Vec2, Timers, tweens, particles, scenes
 - [React Guide](https://pivotx.colondev.com/docs/2.0.0/react-guide): PivotCanvas, hooks, JSX UI widgets
 - [React Native Guide](https://pivotx.colondev.com/docs/2.0.0/react-native-guide): WebView bridge, NativeInput, audio bridge
+- [Levels That Fit Every Screen](https://pivotx.colondev.com/docs/2.0.0/responsive-levels): jump-physics math (apex = power²/2g), clamped layout bands, simulation-verified reachability
 - [Game Patterns](https://pivotx.colondev.com/docs/2.0.0/patterns): scenes, rebindable controls, juice, broad-phase collision
 - [Full Platformer Example](https://pivotx.colondev.com/docs/2.0.0/platformer-example): complete game in ~90 lines
 
