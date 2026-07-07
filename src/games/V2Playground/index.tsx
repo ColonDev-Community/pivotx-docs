@@ -5,7 +5,8 @@
 // - UI:       PivotUI JSX widgets — joystick, jump button, HP bar, HUD text
 // - Physics:  stepBody with moving platforms (they carry you!), one-way
 //             ledges, maxFallSpeed
-// - Effects:  ParticleEmitter bursts on jump & coin pickup
+// - Sound:    synthesized SFX (no audio files!) — one-shot jumps with random
+//             pitch, coin dings, music fade-in, live volume slider
 //
 import { useRef, useState, useEffect } from 'react';
 import {
@@ -17,10 +18,13 @@ import {
   PivotButton,
   PivotProgressBar,
   PivotJoystick,
+  PivotSlider,
+  PivotUIText,
   useGameLoop,
   Keyboard,
   GamepadInput,
   stepBody,
+  Sound,
   UIJoystick,
 } from 'pivotx/react';
 import type { PhysicsBody, StaticRect } from 'pivotx/react';
@@ -31,6 +35,31 @@ const JUMP_POWER = -620;
 const MAX_ENERGY = 3;
 
 interface Coin { x: number; y: number; taken: boolean }
+
+// ── Synthesized sounds (v2 Sound engine — no audio files needed) ────────
+function makeTone(freq: number, duration: number, type: 'sine' | 'square' | 'saw'): Sound {
+  const ctx = Sound.getAudioContext();
+  const length = Math.floor(ctx.sampleRate * duration);
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) {
+    const t = i / ctx.sampleRate;
+    const envelope = Math.max(0, 1 - t / duration);
+    const wave =
+      type === 'sine' ? Math.sin(2 * Math.PI * freq * t) :
+      type === 'square' ? (Math.sin(2 * Math.PI * freq * t) > 0 ? 1 : -1) :
+      2 * ((freq * t) % 1) - 1;
+    data[i] = wave * envelope * 0.25;
+  }
+  return new Sound(buffer);
+}
+
+const sfx = {
+  jump: makeTone(340, 0.18, 'square'),
+  coin: makeTone(880, 0.25, 'sine'),
+  bgm: makeTone(110, 2.0, 'saw'),
+};
+sfx.bgm.loop = true;
 
 export default function V2PlaygroundGame() {
   const onExit = useExitToMenu();
@@ -69,7 +98,32 @@ export default function V2PlaygroundGame() {
   const energy = useRef(MAX_ENERGY);
   const recharge = useRef(0);
   const score = useRef(0);
+  const audioOn = useRef(false);
+  const [volume, setVolume] = useState(0.8);
   const [, setFrame] = useState(0);
+
+  // Unlock audio on first interaction (browser autoplay policy), fade music in
+  useEffect(() => {
+    const unlock = () => {
+      if (audioOn.current) return;
+      audioOn.current = true;
+      Sound.getAudioContext().resume();
+      sfx.bgm.fadeIn(2, 0.12);            // v2: fade the hum in over 2s
+    };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+      sfx.bgm.stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    sfx.jump.volume = volume;
+    sfx.coin.volume = volume;
+    sfx.bgm.volume = Math.min(volume, 1) * 0.15;
+  }, [volume]);
 
   useGameLoop((dt) => {
     const p = player.current;
@@ -87,6 +141,8 @@ export default function V2PlaygroundGame() {
       if (p.grounded && energy.current >= 1) {
         p.vy = JUMP_POWER;
         energy.current -= 1;
+        sfx.jump.playbackRate = 0.9 + Math.random() * 0.3;  // v2: pitch variation
+        sfx.jump.playOneShot();                              // v2: overlapping SFX
       }
     }
     if (p.grounded && energy.current < MAX_ENERGY) {
@@ -111,6 +167,8 @@ export default function V2PlaygroundGame() {
       if (dx * dx + dy * dy < 900) {
         c.taken = true;
         score.current += 1;
+        sfx.coin.playbackRate = 1 + score.current * 0.05;    // rises with combo
+        sfx.coin.playOneShot();
         if (coins.current.every((cc) => cc.taken)) {
           coins.current.forEach((cc) => { cc.taken = false; });
         }
@@ -141,7 +199,7 @@ export default function V2PlaygroundGame() {
         )}
         <PivotRectangle position={{ x: p.x, y: p.y }} width={28} height={28} fill="#38bdf8" />
         <PivotLabel
-          text="arrows/WASD or joystick to move · space or JUMP · purple platform carries you · ESC to exit"
+          text="arrows/WASD or joystick · space or JUMP (hear the pitch shift!) · purple platform carries you · ESC exits"
           position={{ x: W / 2, y: 24 }}
           font="12px Arial"
           fill="rgba(255,255,255,0.35)"
@@ -159,6 +217,17 @@ export default function V2PlaygroundGame() {
             value={energy.current / MAX_ENERGY}
             fill={energy.current >= 1 ? '#22c55e' : '#dc2626'}
             label="ENERGY"
+          />
+          <PivotUIText
+            x={16} y={44}
+            text={`Coins: ${score.current}`}
+            font="bold 16px Arial" color="#fbbf24"
+          />
+          <PivotUIText x={16} y={72} text="Volume" font="12px Arial" color="#94a3b8" />
+          <PivotSlider
+            x={16} y={84} width={130}
+            value={volume}
+            onChange={setVolume}
           />
           <PivotJoystick x={92} y={H - 100} radius={60} widgetRef={stickRef} />
         </PivotUI>

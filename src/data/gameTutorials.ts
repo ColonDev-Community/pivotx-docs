@@ -21,13 +21,14 @@ export const GAME_TUTORIALS: GameTutorialData[] = [
   {
     id: 'v2playground',
     title: 'V2 Playground',
-    description: 'Tour the pIvotX 2.0 engines in one game — input, UI widgets, physics with moving platforms.',
+    description: 'Tour the pIvotX 2.0 engines in one game — input, UI widgets, synthesized sound, physics with moving platforms.',
     difficulty: 'beginner',
-    tags: ['2.0', 'input', 'ui', 'physics', 'gamepad'],
+    tags: ['2.0', 'input', 'ui', 'sound', 'physics', 'gamepad'],
     features: [
       'Keyboard & GamepadInput (zero event listeners)',
       'PivotUI JSX widgets — joystick, button, progress bar',
       'stepBody physics: moving & one-way platforms',
+      'Synthesized SFX — playOneShot, pitch shifts, music fade-in',
       'Energy system with recharge (game-time logic)',
     ],
     route: '/game/v2playground',
@@ -38,6 +39,7 @@ export const GAME_TUTORIALS: GameTutorialData[] = [
       'Reading a virtual joystick via widgetRef in the game loop',
       'stepBody with oneWay ledges and moving platforms that carry the player',
       'maxFallSpeed and frame-rate-independent friction',
+      'Sound engine: playOneShot, playbackRate, fadeIn — from generated buffers',
     ],
     codeBreakdown: [
       {
@@ -125,6 +127,34 @@ if (mover.x + mover.w > W - 10) mover.vx = -Math.abs(mover.vx!);`,
   <PivotRectangle position={{ x: p.x, y: p.y }} width={28} height={28} fill="#38bdf8" />
   {/* ...coins, label, PivotUI... */}
 </PivotCanvas>`,
+        language: 'tsx',
+      },
+      {
+        title: '7. Sound — synthesized, no audio files',
+        description: 'The v2 Sound engine plays any AudioBuffer, so the demo generates its own tones. playOneShot lets rapid jumps overlap instead of cutting off, playbackRate gives each jump a random pitch (and the coin ding rises with your combo), and the background hum fades in with fadeIn once the browser unlocks audio. A PivotSlider drives the volume live.',
+        code: `function makeTone(freq: number, duration: number, type: 'sine' | 'square' | 'saw'): Sound {
+  const ctx = Sound.getAudioContext();
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+  // ...fill the buffer with a waveform + decay envelope...
+  return new Sound(buffer);
+}
+
+const sfx = { jump: makeTone(340, 0.18, 'square'), coin: makeTone(880, 0.25, 'sine'), bgm: makeTone(110, 2, 'saw') };
+sfx.bgm.loop = true;
+
+// First user interaction (autoplay policy): fade the music in
+sfx.bgm.fadeIn(2, 0.12);
+
+// On jump — overlapping one-shots with pitch variation:
+sfx.jump.playbackRate = 0.9 + Math.random() * 0.3;
+sfx.jump.playOneShot();
+
+// Coin ding rises with your combo:
+sfx.coin.playbackRate = 1 + score * 0.05;
+sfx.coin.playOneShot();
+
+// Volume slider (UI widget) drives it live:
+<PivotSlider x={16} y={84} width={130} value={volume} onChange={setVolume} />`,
         language: 'tsx',
       },
     ],
