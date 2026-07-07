@@ -1,3 +1,37 @@
-# https://www.robotstxt.org/robotstxt.html
+# pivotx.colondev.com — all crawlers welcome, including AI assistants.
+
 User-agent: *
 Disallow:
+
+# AI / LLM crawlers — explicitly allowed (docs are meant to be learned from)
+User-agent: GPTBot
+Disallow:
+
+User-agent: OAI-SearchBot
+Disallow:
+
+User-agent: ChatGPT-User
+Disallow:
+
+User-agent: ClaudeBot
+Disallow:
+
+User-agent: Claude-Web
+Disallow:
+
+User-agent: anthropic-ai
+Disallow:
+
+User-agent: PerplexityBot
+Disallow:
+
+User-agent: Google-Extended
+Disallow:
+
+User-agent: CCBot
+Disallow:
+
+# Machine-readable summary for AI assistants:
+# https://pivotx.colondev.com/llms.txt
+
+Sitemap: https://pivotx.colondev.com/sitemap.xml

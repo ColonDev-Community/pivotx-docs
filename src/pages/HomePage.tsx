@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GAME_TUTORIALS } from '../data/gameTutorials';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 type QuickStartTab = 'vanilla' | 'typescript' | 'react';
 
 export default function HomePage() {
+  usePageMeta(
+    'pIvotX — Lightweight 2D Game Engine for JavaScript, TypeScript, React & React Native',
+    'Build 2D games fast with pIvotX 2.0 — a ~52KB zero-dependency engine: physics, input, UI widgets, sound, particles & scenes. Tutorials, live demos, full API docs.',
+    '/',
+  );
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [quickStartTab, setQuickStartTab] = useState<QuickStartTab>('vanilla');

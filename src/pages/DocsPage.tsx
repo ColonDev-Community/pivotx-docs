@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DOC_VERSIONS } from '../data/docs';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function renderInlineCode(text: string): React.ReactNode {
   const parts = text.split(/(`[^`]+`)/g);
@@ -182,9 +183,20 @@ export default function DocsPage() {
   const selectedVersion = urlVersion || DOC_VERSIONS[0].version;
 
   const currentDocs = DOC_VERSIONS.find(v => v.version === selectedVersion) || DOC_VERSIONS[0];
+
   const activeSection = sectionId
     ? currentDocs.sections.find(s => s.id === sectionId)
     : currentDocs.sections[0];
+
+  usePageMeta(
+    sectionId && activeSection
+      ? `${activeSection.title} — pIvotX ${currentDocs.version} Docs`
+      : `Documentation (v${currentDocs.version})`,
+    sectionId && activeSection
+      ? `pIvotX ${currentDocs.version} documentation: ${activeSection.title} — API reference and runnable examples for the lightweight 2D game engine.`
+      : `Complete pIvotX ${currentDocs.version} documentation: getting started, input, UI, sound and physics engines, game utilities, React & React Native guides.`,
+    sectionId ? `/docs/${currentDocs.version}/${sectionId}` : `/docs/${currentDocs.version}`,
+  );
 
   const handleVersionChange = (version: string) => {
     navigate(`/docs/${version}`);
