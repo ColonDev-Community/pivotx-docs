@@ -137,6 +137,27 @@ export default function V2PlaygroundGame() {
   const energy = useRef(MAX_ENERGY);
   const recharge = useRef(0);
   const score = useRef(0);
+
+  // Window resize / rotation: the world was laid out for the old size —
+  // rebuild it in the new centered band (progress kept).
+  useEffect(() => {
+    platforms.current = [
+      { x: 0, y: H - 48, w: W, h: 48 },
+      { x: L, y: H - 148, w: 160, h: 14, oneWay: true },
+      { x: L + B * 0.34, y: H - 248, w: 160, h: 14, oneWay: true },
+      { x: L + B * 0.62, y: H - 348, w: 120, h: 16, vx: 70, oneWay: true },
+    ];
+    coins.current = [
+      { x: L + 80, y: H - 185, taken: false },
+      { x: L + B * 0.34 + 80, y: H - 285, taken: false },
+      { x: L + B * 0.8, y: H - 395, taken: false },
+    ];
+    player.current.x = L + 60;
+    player.current.y = H - 120;
+    player.current.vx = 0;
+    player.current.vy = 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [W, H]);
   const audioOn = useRef(false);
   const [volume, setVolume] = useState(0.8);
   const [, setFrame] = useState(0);
