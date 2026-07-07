@@ -79,21 +79,24 @@ export default function V2PlaygroundGame() {
   }, [onExit]);
 
   // ── Game state (refs — no re-render cost) ────────────────────────────
+  // Staircase layout in a centered band. Rises are ~100px (jump reaches
+  // ~154px) and horizontal edge gaps are ~60px (a rising jump carries
+  // ~180px), so every hop is comfortable at any window size.
+  const B = Math.min(W - 40, 640);       // band width
+  const L = W / 2 - B / 2;               // band left edge
   const player = useRef<PhysicsBody>({
-    x: W / 2 - 14, y: H - 120, vx: 0, vy: 0, width: 28, height: 28, grounded: false,
+    x: L + 60, y: H - 120, vx: 0, vy: 0, width: 28, height: 28, grounded: false,
   });
-  // Layout: centered band, each step ~100px up (jump reaches ~154px)
-  const CX = W / 2;
   const platforms = useRef<StaticRect[]>([
-    { x: 0, y: H - 48, w: W, h: 48 },                          // ground
-    { x: CX - 330, y: H - 150, w: 160, h: 14, oneWay: true },  // left ledge
-    { x: CX + 170, y: H - 250, w: 160, h: 14, oneWay: true },  // right ledge
-    { x: CX - 60, y: H - 350, w: 120, h: 16, vx: 90 },         // moving platform
+    { x: 0, y: H - 48, w: W, h: 48 },                              // ground
+    { x: L, y: H - 148, w: 160, h: 14, oneWay: true },             // step 1
+    { x: L + B * 0.34, y: H - 248, w: 160, h: 14, oneWay: true },  // step 2
+    { x: L + B * 0.62, y: H - 348, w: 120, h: 16, vx: 70, oneWay: true },  // moving top step (jump up through it)
   ]);
   const coins = useRef<Coin[]>([
-    { x: CX - 250, y: H - 185, taken: false },
-    { x: CX + 250, y: H - 285, taken: false },
-    { x: CX, y: H - 400, taken: false },
+    { x: L + 80, y: H - 185, taken: false },
+    { x: L + B * 0.34 + 80, y: H - 285, taken: false },
+    { x: L + B * 0.8, y: H - 395, taken: false },
   ]);
   const stickRef = useRef<UIJoystick | null>(null);
   const jumpQueued = useRef(false);
@@ -156,10 +159,10 @@ export default function V2PlaygroundGame() {
     stepBody(p, platforms.current, dt, { gravity: 1500, friction: 0.9, maxFallSpeed: 900 });
     const mover = platforms.current[3];
     if (mover.vx !== undefined) {
-      const left = Math.max(10, W / 2 - 350);
-      const right = Math.min(W - 10, W / 2 + 350);
-      if (mover.x < left) mover.vx = Math.abs(mover.vx);
-      if (mover.x + mover.w > right) mover.vx = -Math.abs(mover.vx);
+      const B2 = Math.min(W - 40, 640);
+      const L2 = W / 2 - B2 / 2;
+      if (mover.x < L2 + B2 * 0.44) mover.vx = Math.abs(mover.vx);
+      if (mover.x + mover.w > L2 + B2) mover.vx = -Math.abs(mover.vx);
     }
     if (p.x < 0) { p.x = 0; p.vx = 0; }
     if (p.x + p.width > W) { p.x = W - p.width; p.vx = 0; }
@@ -193,7 +196,7 @@ export default function V2PlaygroundGame() {
             position={{ x: pl.x, y: pl.y }}
             width={pl.w}
             height={pl.h}
-            fill={pl.oneWay ? '#a16207' : pl.vx !== undefined ? '#7c3aed' : '#334155'}
+            fill={pl.vx !== undefined ? '#7c3aed' : pl.oneWay ? '#a16207' : '#334155'}
           />
         ))}
         {coins.current.map((c, i) =>

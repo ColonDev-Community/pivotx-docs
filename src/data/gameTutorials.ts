@@ -62,7 +62,7 @@ const platforms = useRef<StaticRect[]>([
   { x: 0, y: H - 48, w: W, h: 48 },                          // solid ground
   { x: CX - 330, y: H - 150, w: 160, h: 14, oneWay: true },  // jump-through
   { x: CX + 170, y: H - 250, w: 160, h: 14, oneWay: true },
-  { x: CX - 60,  y: H - 350, w: 120, h: 16, vx: 90 },        // moving — carries you!
+  { x: CX - 60,  y: H - 350, w: 120, h: 16, vx: 90, oneWay: true },  // moving elevator — carries you!
 ]);`,
         language: 'tsx',
       },
@@ -123,7 +123,7 @@ if (mover.x + mover.w > W - 10) mover.vx = -Math.abs(mover.vx!);`,
     <PivotRectangle
       key={i}
       position={{ x: pl.x, y: pl.y }} width={pl.w} height={pl.h}
-      fill={pl.oneWay ? '#a16207' : pl.vx !== undefined ? '#7c3aed' : '#334155'}
+      fill={pl.vx !== undefined ? '#7c3aed' : pl.oneWay ? '#a16207' : '#334155'}
     />
   ))}
   <PivotRectangle position={{ x: p.x, y: p.y }} width={28} height={28} fill="#38bdf8" />
