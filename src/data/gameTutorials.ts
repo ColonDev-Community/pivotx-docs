@@ -56,11 +56,13 @@ import type { PhysicsBody, StaticRect } from 'pivotx/react';`,
       {
         title: '2. The world — platforms that do tricks',
         description: 'StaticRect gained superpowers in 2.0: oneWay ledges only collide when you land on them from above (jump through from below!), and a platform with vx is a moving platform — stepBody advances it and carries anyone standing on it.',
-        code: `const platforms = useRef<StaticRect[]>([
+        code: `// Size the steps from your jump: height ≈ JUMP² / (2 · gravity) → 680²/3000 ≈ 154px
+const CX = W / 2;
+const platforms = useRef<StaticRect[]>([
   { x: 0, y: H - 48, w: W, h: 48 },                          // solid ground
-  { x: W * 0.08, y: H - 190, w: 150, h: 14, oneWay: true },  // jump-through
-  { x: W * 0.62, y: H - 270, w: 150, h: 14, oneWay: true },
-  { x: W * 0.3,  y: H - 360, w: 120, h: 16, vx: 90 },        // moving — carries you!
+  { x: CX - 330, y: H - 150, w: 160, h: 14, oneWay: true },  // jump-through
+  { x: CX + 170, y: H - 250, w: 160, h: 14, oneWay: true },
+  { x: CX - 60,  y: H - 350, w: 120, h: 16, vx: 90 },        // moving — carries you!
 ]);`,
         language: 'tsx',
       },

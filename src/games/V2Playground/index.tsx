@@ -31,7 +31,7 @@ import type { PhysicsBody, StaticRect } from 'pivotx/react';
 import { useExitToMenu } from '../../hooks/useExitToMenu';
 
 const MOVE_SPEED = 260;
-const JUMP_POWER = -620;
+const JUMP_POWER = -680;
 const MAX_ENERGY = 3;
 
 interface Coin { x: number; y: number; taken: boolean }
@@ -80,18 +80,20 @@ export default function V2PlaygroundGame() {
 
   // ── Game state (refs — no re-render cost) ────────────────────────────
   const player = useRef<PhysicsBody>({
-    x: 120, y: 100, vx: 0, vy: 0, width: 28, height: 28, grounded: false,
+    x: W / 2 - 14, y: H - 120, vx: 0, vy: 0, width: 28, height: 28, grounded: false,
   });
+  // Layout: centered band, each step ~100px up (jump reaches ~154px)
+  const CX = W / 2;
   const platforms = useRef<StaticRect[]>([
-    { x: 0, y: H - 48, w: W, h: 48 },
-    { x: W * 0.08, y: H - 190, w: 150, h: 14, oneWay: true },
-    { x: W * 0.62, y: H - 270, w: 150, h: 14, oneWay: true },
-    { x: W * 0.3, y: H - 360, w: 120, h: 16, vx: 90 },
+    { x: 0, y: H - 48, w: W, h: 48 },                          // ground
+    { x: CX - 330, y: H - 150, w: 160, h: 14, oneWay: true },  // left ledge
+    { x: CX + 170, y: H - 250, w: 160, h: 14, oneWay: true },  // right ledge
+    { x: CX - 60, y: H - 350, w: 120, h: 16, vx: 90 },         // moving platform
   ]);
   const coins = useRef<Coin[]>([
-    { x: W * 0.15, y: H - 225, taken: false },
-    { x: W * 0.69, y: H - 305, taken: false },
-    { x: W * 0.5, y: H - 410, taken: false },
+    { x: CX - 250, y: H - 185, taken: false },
+    { x: CX + 250, y: H - 285, taken: false },
+    { x: CX, y: H - 400, taken: false },
   ]);
   const stickRef = useRef<UIJoystick | null>(null);
   const jumpQueued = useRef(false);
@@ -154,8 +156,10 @@ export default function V2PlaygroundGame() {
     stepBody(p, platforms.current, dt, { gravity: 1500, friction: 0.9, maxFallSpeed: 900 });
     const mover = platforms.current[3];
     if (mover.vx !== undefined) {
-      if (mover.x < 10) mover.vx = Math.abs(mover.vx);
-      if (mover.x + mover.w > W - 10) mover.vx = -Math.abs(mover.vx);
+      const left = Math.max(10, W / 2 - 350);
+      const right = Math.min(W - 10, W / 2 + 350);
+      if (mover.x < left) mover.vx = Math.abs(mover.vx);
+      if (mover.x + mover.w > right) mover.vx = -Math.abs(mover.vx);
     }
     if (p.x < 0) { p.x = 0; p.vx = 0; }
     if (p.x + p.width > W) { p.x = W - p.width; p.vx = 0; }
