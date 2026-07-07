@@ -1,0 +1,65 @@
+# pIvotX
+
+> pIvotX is a lightweight 2D game engine (~52 KB minified, zero runtime
+> dependencies) for Vanilla JavaScript, TypeScript, React, and React
+> Native/Expo. Version 2.0 includes physics (one-way & moving platforms,
+> raycasts, swept casts, spatial hashing), input engines (keyboard, gamepad
+> with rumble, pointer, rebindable action maps), a canvas UI widget system
+> (buttons, sliders, progress bars, virtual joystick, nine-slice panels),
+> a Web Audio sound engine (one-shots, audio sprites, fades, pitch, stereo
+> pan, sound buses), particles, tweens, timers, scene management, and a
+> camera with shake/zoom/dead-zone follow.
+
+Install: `npm i @colon-dev/pivotx` — entries: `@colon-dev/pivotx` (core),
+`@colon-dev/pivotx/react`, `@colon-dev/pivotx/react-native`.
+CDN: `https://cdn.jsdelivr.net/npm/@colon-dev/pivotx@2/dist/pivotx.umd.min.js`
+(global `PivotX`). License: MIT.
+
+## Docs
+
+- [Getting Started](https://pivotx.colondev.com/docs/2.0.0/getting-started): install, four platform targets, a 60-second first game
+- [What's New in 2.0](https://pivotx.colondev.com/docs/2.0.0/whats-new): engine overview and upgrade notes (fully backwards-compatible)
+- [Vanilla JS Guide](https://pivotx.colondev.com/docs/2.0.0/vanilla-js): complete mini-platformer from one script tag
+- [TypeScript Guide](https://pivotx.colondev.com/docs/2.0.0/typescript): typed entities and custom drawables
+- [Core API Reference](https://pivotx.colondev.com/docs/2.0.0/core-api): Canvas, shapes, sprites, tilemaps
+- [Input Engine](https://pivotx.colondev.com/docs/2.0.0/input-engine): Keyboard, GamepadInput, Pointer, InputMap
+- [UI Engine](https://pivotx.colondev.com/docs/2.0.0/ui-engine): UIManager and widgets, anchoring, keyboard navigation
+- [Sound Engine](https://pivotx.colondev.com/docs/2.0.0/sound-engine): one-shots, audio sprites, fades, sound groups
+- [Physics Engine](https://pivotx.colondev.com/docs/2.0.0/physics-engine): stepBody, moving platforms, raycasts, SpatialHash
+- [Game Utilities](https://pivotx.colondev.com/docs/2.0.0/game-utilities): Vec2, Timers, tweens, particles, scenes
+- [React Guide](https://pivotx.colondev.com/docs/2.0.0/react-guide): PivotCanvas, hooks, JSX UI widgets
+- [React Native Guide](https://pivotx.colondev.com/docs/2.0.0/react-native-guide): WebView bridge, NativeInput, audio bridge
+- [Game Patterns](https://pivotx.colondev.com/docs/2.0.0/patterns): scenes, rebindable controls, juice, broad-phase collision
+- [Full Platformer Example](https://pivotx.colondev.com/docs/2.0.0/platformer-example): complete game in ~90 lines
+
+## Tutorials (live playable demos with code walkthroughs)
+
+- [V2 Playground](https://pivotx.colondev.com/tutorial/v2playground): the 2.0 engines in one game — input, UI, sound, physics
+- [All tutorials](https://pivotx.colondev.com/tutorials): 10 games from beginner (bouncing ball) to advanced (roguelike, racing, tactics)
+
+## Source & package
+
+- [GitHub](https://github.com/ColonDev-Community/pIvotX): source, README with full API tables, CHANGELOG
+- [npm](https://www.npmjs.com/package/@colon-dev/pivotx): @colon-dev/pivotx
+
+## Quick example
+
+```js
+const { Canvas, Point, Rectangle, Keyboard, stepBody } = PivotX;
+const canvas = new Canvas('game');
+const player = { x: 60, y: 100, vx: 0, vy: 0, width: 28, height: 28, grounded: false };
+const platforms = [
+  { x: 0, y: 360, w: 600, h: 40 },
+  { x: 200, y: 280, w: 120, h: 14, oneWay: true },   // jump-through
+  { x: 400, y: 220, w: 100, h: 16, vx: 60 },         // moving platform — carries the player
+];
+canvas.startLoop((dt) => {
+  canvas.clear();
+  player.vx = 240 * Keyboard.getAxis('horizontal');   // arrows + WASD, no listeners
+  if (Keyboard.justPressed('space') && player.grounded) player.vy = -560;
+  stepBody(player, platforms, dt, { gravity: 1400, maxFallSpeed: 900 });
+  const r = new Rectangle(Point(player.x, player.y), 28, 28);
+  r.fillColor = '#38bdf8';
+  canvas.add(r);
+});
+```

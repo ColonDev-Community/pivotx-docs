@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GAME_TUTORIALS } from '../data/gameTutorials';
 
+import { usePageMeta } from '../hooks/usePageMeta';
+
 export default function TutorialsPage() {
+  usePageMeta(
+    'Game Tutorials — 10 playable demos with code walkthroughs',
+    'Learn pIvotX by playing: 10 live browser games from beginner to advanced, each with a step-by-step code breakdown — platformers, shooters, racing, roguelikes and the 2.0 engine playground.',
+    '/tutorials',
+  );
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterDifficulty, setFilterDifficulty] = useState<string>('all');

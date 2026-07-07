@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { GAME_TUTORIALS } from '../data/gameTutorials';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export default function TutorialDetailPage() {
   const navigate = useNavigate();
@@ -8,6 +9,11 @@ export default function TutorialDetailPage() {
   const [activeCodeSection, setActiveCodeSection] = useState(0);
 
   const tutorial = GAME_TUTORIALS.find(g => g.id === gameId);
+  usePageMeta(
+    tutorial ? `${tutorial.title} Tutorial` : 'Tutorial not found',
+    tutorial?.description,
+    tutorial ? `/tutorial/${tutorial.id}` : undefined,
+  );
 
   if (!tutorial) {
     return (

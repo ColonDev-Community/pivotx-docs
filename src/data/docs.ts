@@ -1,9 +1,11 @@
 import { DocVersion } from '../types';
+import { DOCS_V2 } from './docs-v2';
 
 export const DOC_VERSIONS: DocVersion[] = [
+  DOCS_V2,
   {
     version: '1.2.x',
-    label: 'v1.2.x (Latest)',
+    label: 'v1.2.x',
     sections: [
       {
         id: 'getting-started',
