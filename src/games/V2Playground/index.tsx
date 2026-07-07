@@ -6,7 +6,8 @@
 // - Physics:  stepBody with moving platforms (they carry you!), one-way
 //             ledges, maxFallSpeed
 // - Sound:    synthesized SFX (no audio files!) — one-shot jumps with random
-//             pitch, coin dings, music fade-in, live volume slider
+//             pitch, coin dings, a composed ambient music loop with fade-in,
+//             and a live volume slider
 //
 import { useRef, useState, useEffect } from 'react';
 import {
@@ -54,12 +55,45 @@ function makeTone(freq: number, duration: number, type: 'sine' | 'square' | 'saw
   return new Sound(buffer);
 }
 
+// A calm 8-second ambient loop: pentatonic arpeggio + soft low pad.
+// Notes wrap around the buffer end so the loop is seamless.
+function makeAmbientLoop(): Sound {
+  const ctx = Sound.getAudioContext();
+  const LOOP = 8;
+  const length = ctx.sampleRate * LOOP;
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  const scale = [220, 261.63, 293.66, 329.63, 392];            // A minor pentatonic
+  const pattern = [0, 1, 3, 4, 3, 1, 2, 3, 0, 1, 3, 2, 1, 2, 3, 4];
+
+  pattern.forEach((noteIdx, step) => {
+    const freq = scale[noteIdx];
+    const start = Math.floor(step * 0.5 * ctx.sampleRate);
+    const tail = Math.floor(1.4 * ctx.sampleRate);
+    for (let i = 0; i < tail; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-3 * t) * (1 - Math.exp(-40 * t));  // soft attack, long decay
+      data[(start + i) % length] += Math.sin(2 * Math.PI * freq * t) * env * 0.085;
+    }
+  });
+
+  // Low pad with a slow swell whose period matches the loop
+  for (let i = 0; i < length; i++) {
+    const t = i / ctx.sampleRate;
+    data[i] += Math.sin(2 * Math.PI * 110 * t) * 0.022 * (0.75 + 0.25 * Math.sin((2 * Math.PI * t) / LOOP));
+  }
+
+  const sound = new Sound(buffer);
+  sound.loop = true;
+  return sound;
+}
+
 const sfx = {
   jump: makeTone(340, 0.18, 'square'),
   coin: makeTone(880, 0.25, 'sine'),
-  bgm: makeTone(110, 2.0, 'saw'),
+  bgm: makeAmbientLoop(),
 };
-sfx.bgm.loop = true;
 
 export default function V2PlaygroundGame() {
   const onExit = useExitToMenu();
@@ -113,7 +147,7 @@ export default function V2PlaygroundGame() {
       if (audioOn.current) return;
       audioOn.current = true;
       Sound.getAudioContext().resume();
-      sfx.bgm.fadeIn(2, 0.12);            // v2: fade the hum in over 2s
+      sfx.bgm.fadeIn(3, 0.35);            // v2: fade the ambient loop in
     };
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
@@ -127,7 +161,7 @@ export default function V2PlaygroundGame() {
   useEffect(() => {
     sfx.jump.volume = volume;
     sfx.coin.volume = volume;
-    sfx.bgm.volume = Math.min(volume, 1) * 0.15;
+    sfx.bgm.volume = Math.min(volume, 1) * 0.45;
   }, [volume]);
 
   useGameLoop((dt) => {

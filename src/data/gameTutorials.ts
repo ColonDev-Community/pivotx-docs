@@ -133,7 +133,7 @@ if (mover.x + mover.w > W - 10) mover.vx = -Math.abs(mover.vx!);`,
       },
       {
         title: '7. Sound — synthesized, no audio files',
-        description: 'The v2 Sound engine plays any AudioBuffer, so the demo generates its own tones. playOneShot lets rapid jumps overlap instead of cutting off, playbackRate gives each jump a random pitch (and the coin ding rises with your combo), and the background hum fades in with fadeIn once the browser unlocks audio. A PivotSlider drives the volume live.',
+        description: 'The v2 Sound engine plays any AudioBuffer, so the demo generates its own tones. playOneShot lets rapid jumps overlap instead of cutting off, playbackRate gives each jump a random pitch (and the coin ding rises with your combo), and a composed ambient loop (pentatonic arpeggio + soft pad, generated into one seamless 8s buffer) fades in with fadeIn once the browser unlocks audio. A PivotSlider drives the volume live.',
         code: `function makeTone(freq: number, duration: number, type: 'sine' | 'square' | 'saw'): Sound {
   const ctx = Sound.getAudioContext();
   const buffer = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
@@ -141,11 +141,14 @@ if (mover.x + mover.w > W - 10) mover.vx = -Math.abs(mover.vx!);`,
   return new Sound(buffer);
 }
 
-const sfx = { jump: makeTone(340, 0.18, 'square'), coin: makeTone(880, 0.25, 'sine'), bgm: makeTone(110, 2, 'saw') };
-sfx.bgm.loop = true;
+const sfx = {
+  jump: makeTone(340, 0.18, 'square'),
+  coin: makeTone(880, 0.25, 'sine'),
+  bgm: makeAmbientLoop(),   // 8s pentatonic arpeggio + pad, seamless loop
+};
 
 // First user interaction (autoplay policy): fade the music in
-sfx.bgm.fadeIn(2, 0.12);
+sfx.bgm.fadeIn(3, 0.35);
 
 // On jump — overlapping one-shots with pitch variation:
 sfx.jump.playbackRate = 0.9 + Math.random() * 0.3;
