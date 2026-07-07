@@ -138,9 +138,19 @@ export default function V2PlaygroundGame() {
   const recharge = useRef(0);
   const score = useRef(0);
 
-  // Window resize / rotation: the world was laid out for the old size —
-  // rebuild it in the new centered band (progress kept).
+  // Window resize / rotation: relayout the world in the new centered band
+  // WITHOUT resetting the game — coin states and the player's relative
+  // position carry over.
+  const dimsRef = useRef({ W, H });
   useEffect(() => {
+    const { W: oW, H: oH } = dimsRef.current;
+    if (oW === W && oH === H) return;
+    dimsRef.current = { W, H };
+
+    const oldB = Math.min(oW - 40, 640);
+    const oldL = oW / 2 - oldB / 2;
+    const taken = coins.current.map((c) => c.taken);
+
     platforms.current = [
       { x: 0, y: H - 48, w: W, h: 48 },
       { x: L, y: H - 148, w: 160, h: 14, oneWay: true },
@@ -148,14 +158,16 @@ export default function V2PlaygroundGame() {
       { x: L + B * 0.62, y: H - 348, w: 120, h: 16, vx: 70, oneWay: true },
     ];
     coins.current = [
-      { x: L + 80, y: H - 185, taken: false },
-      { x: L + B * 0.34 + 80, y: H - 285, taken: false },
-      { x: L + B * 0.8, y: H - 395, taken: false },
+      { x: L + 80, y: H - 185, taken: taken[0] ?? false },
+      { x: L + B * 0.34 + 80, y: H - 285, taken: taken[1] ?? false },
+      { x: L + B * 0.8, y: H - 395, taken: taken[2] ?? false },
     ];
-    player.current.x = L + 60;
-    player.current.y = H - 120;
-    player.current.vx = 0;
-    player.current.vy = 0;
+
+    const p = player.current;
+    const relX = (p.x - oldL) / oldB;
+    const bottomOff = oH - (p.y + p.height);
+    p.x = Math.max(0, Math.min(W - p.width, L + relX * B));
+    p.y = Math.max(0, Math.min(H - 48 - p.height, H - bottomOff - p.height));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [W, H]);
   const audioOn = useRef(false);
