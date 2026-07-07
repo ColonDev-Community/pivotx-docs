@@ -751,6 +751,78 @@ This caught both of our bugs: the tablet-width gap failure and a solid moving
 platform that blocked jumps from below (fixed by making it \`oneWay\` — a
 jump-through elevator). The live **V2 Playground** on this site uses exactly
 this layout and passes the simulation on all four device profiles in under 3s.
+
+## Handling rotation & live resize
+
+The band layout fixes *initial* sizing — rotation is its own trap. We hit
+both failure modes in our demos:
+
+**Failure 1: the world never relayouts.** The natural pattern stores the
+world in a ref built once with mount-time dimensions:
+
+\`\`\`js
+const world = useRef(createWorld(W, H));   // ⚠️ W/H frozen at mount
+\`\`\`
+
+Rotate portrait → landscape and the ground is still at portrait coordinates
+— often completely off-screen. The *canvas* resizes (so it looks like a
+canvas bug), but the *level* didn't.
+
+**Failure 2: the obvious fix resets the game.** Rebuilding the world in a
+\`useEffect([W, H])\` relayouts correctly — and throws away the player's run
+on every rotation. Players notice immediately.
+
+### The fix: remap state relationally
+
+Rebuild the static geometry, but carry the dynamic state across by
+expressing it relative to the layout, not in absolute pixels:
+
+\`\`\`js
+const dims = useRef({ W, H });
+useEffect(() => {
+  const { W: oW, H: oH } = dims.current;
+  if (oW === W && oH === H) return;    // guard the initial mount
+  dims.current = { W, H };
+
+  const oldB = Math.min(oW - 40, 560), oldL = oW / 2 - oldB / 2;
+  const next = createWorld(W, H);      // fresh geometry in the new band
+
+  // Progress carries over
+  next.score = world.current.score;
+  world.current.coins.forEach((c, i) => { if (next.coins[i]) next.coins[i].taken = c.taken; });
+
+  // Player: band-relative x, ground-relative y, velocity intact —
+  // mid-jump rotations continue the jump
+  const p = world.current.player;
+  const relX = (p.x - oldL) / oldB;
+  const bottomOff = oH - (p.y + p.height);
+  next.player.x = Math.max(0, Math.min(W - p.width, L + relX * B));
+  next.player.y = Math.max(0, Math.min(H - 48 - p.height, H - bottomOff - p.height));
+  next.player.vx = p.vx; next.player.vy = p.vy;
+
+  world.current = next;
+}, [W, H]);
+\`\`\`
+
+For free-flowing games without a layout band (e.g. an endless flapper),
+**scale proportionally** instead: \`x *= W / oldW; gapY *= H / oldH\` for the
+ball and every obstacle — the run continues, the pipes reshape.
+
+### React Native caveat
+
+On native, a size change regenerates the WebView page (that's how the canvas
+resizes), which destroys the Web Audio context. pIvotX ≥ 2.0.3 automatically
+replays widget state and sound loads after the reload (\`onLoadEnd\` resync),
+but a *playing* music loop can't legally resume without a user gesture —
+re-arm it to restart on the next tap/jump:
+
+\`\`\`js
+useEffect(() => { musicStarted.current = false; }, [W, H]);
+\`\`\`
+
+Known edge case: a moving platform's patrol phase doesn't carry across the
+remap — a player standing on it mid-rotation may drop one step. Accept it,
+or persist the platform's offset the same relational way.
       `,
     },
     {
