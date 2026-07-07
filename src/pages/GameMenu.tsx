@@ -7,6 +7,7 @@ import {
 } from 'pivotx/react';
 
 const games = [
+  { id: 'v2playground', title: 'V2 Playground', description: 'pIvotX 2.0 engines live — joystick & UI widgets, moving platforms, gamepad support!' },
   { id: 'nexus2500', title: 'NEXUS 2500: The Last Signal', description: '25th century epic — 5 chapters, bosses, full storyline. Humanity\'s last hope!' },
   { id: 'crystalcaverns', title: 'Crystal Caverns', description: 'Platformer — tilemap levels, camera follow, parallax, sprites & collectibles!' },
   { id: 'carrace', title: 'Nitro Highway', description: 'Endless police chase racing - dodge traffic, nitro boost, wanted levels!' },

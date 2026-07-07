@@ -13,6 +13,7 @@ import CarGame from './games/CarRace';
 import Nexus2500Game from './games/Nexus2500';
 import AetherdriftGame from './games/Aetherdrift';
 import CrystalCavernsGame from './games/CrystalCaverns';
+import V2PlaygroundGame from './games/V2Playground';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/tutorial/:gameId" element={<SiteLayout><TutorialDetailPage /></SiteLayout>} />
 
       {/* Game routes — full screen, no header */}
+      <Route path="/game/v2playground" element={<V2PlaygroundGame />} />
       <Route path="/game/aetherdrift" element={<AetherdriftGame />} />
       <Route path="/game/crystalcaverns" element={<CrystalCavernsGame />} />
       <Route path="/game/nexus2500" element={<Nexus2500Game />} />

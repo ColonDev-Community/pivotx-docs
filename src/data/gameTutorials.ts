@@ -19,6 +19,117 @@ export interface CodeSection {
 
 export const GAME_TUTORIALS: GameTutorialData[] = [
   {
+    id: 'v2playground',
+    title: 'V2 Playground',
+    description: 'Tour the pIvotX 2.0 engines in one game — input, UI widgets, physics with moving platforms.',
+    difficulty: 'beginner',
+    tags: ['2.0', 'input', 'ui', 'physics', 'gamepad'],
+    features: [
+      'Keyboard & GamepadInput (zero event listeners)',
+      'PivotUI JSX widgets — joystick, button, progress bar',
+      'stepBody physics: moving & one-way platforms',
+      'Energy system with recharge (game-time logic)',
+    ],
+    route: '/game/v2playground',
+    conceptsCovered: [
+      'Keyboard.getAxis and justPressed — the v2 input engine',
+      'GamepadInput sticks & buttons merged with keyboard',
+      'Declaring canvas UI in JSX with <PivotUI>',
+      'Reading a virtual joystick via widgetRef in the game loop',
+      'stepBody with oneWay ledges and moving platforms that carry the player',
+      'maxFallSpeed and frame-rate-independent friction',
+    ],
+    codeBreakdown: [
+      {
+        title: '1. Imports — the 2.0 engine surface',
+        description: 'Everything comes from one entry point: shape components, the UI widget components, the input engines, and the physics integrator. No custom hooks or event plumbing needed.',
+        code: `import {
+  PivotCanvas, PivotRectangle, PivotCircle, PivotLabel,
+  PivotUI, PivotButton, PivotProgressBar, PivotJoystick,
+  useGameLoop, Keyboard, GamepadInput, stepBody, UIJoystick,
+} from 'pivotx/react';
+import type { PhysicsBody, StaticRect } from 'pivotx/react';`,
+        language: 'tsx',
+      },
+      {
+        title: '2. The world — platforms that do tricks',
+        description: 'StaticRect gained superpowers in 2.0: oneWay ledges only collide when you land on them from above (jump through from below!), and a platform with vx is a moving platform — stepBody advances it and carries anyone standing on it.',
+        code: `const platforms = useRef<StaticRect[]>([
+  { x: 0, y: H - 48, w: W, h: 48 },                          // solid ground
+  { x: W * 0.08, y: H - 190, w: 150, h: 14, oneWay: true },  // jump-through
+  { x: W * 0.62, y: H - 270, w: 150, h: 14, oneWay: true },
+  { x: W * 0.3,  y: H - 360, w: 120, h: 16, vx: 90 },        // moving — carries you!
+]);`,
+        language: 'tsx',
+      },
+      {
+        title: '3. Input — three devices, three lines',
+        description: 'Keyboard.getAxis merges arrows + WASD into a -1..1 value. GamepadInput reads the controller stick with a dead-zone. The on-screen joystick value comes from a widgetRef. Add them together, clamp, done — no addEventListener anywhere.',
+        code: `const stick = stickRef.current?.value ?? { x: 0, y: 0 };
+const ax = stick.x
+  + Keyboard.getAxis('horizontal')
+  + GamepadInput.getStick('left').x;
+p.vx = MOVE_SPEED * Math.max(-1, Math.min(1, ax));
+
+// justPressed is true for exactly one frame — perfect for jumps
+if (Keyboard.justPressed('space') || GamepadInput.justPressed('a')) {
+  jumpQueued.current = true;
+}`,
+        language: 'tsx',
+      },
+      {
+        title: '4. Physics — one call per frame',
+        description: 'stepBody applies gravity, integrates with sub-stepping (no tunneling), resolves all platform collisions including the special platform types, applies frame-rate-independent friction, and caps fall speed. It sets p.grounded for you.',
+        code: `stepBody(p, platforms.current, dt, {
+  gravity: 1500,
+  friction: 0.9,        // same feel at any fps
+  maxFallSpeed: 900,    // terminal velocity
+});
+
+// Bounce the moving platform between screen edges
+const mover = platforms.current[3];
+if (mover.x < 10) mover.vx = Math.abs(mover.vx!);
+if (mover.x + mover.w > W - 10) mover.vx = -Math.abs(mover.vx!);`,
+        language: 'tsx',
+      },
+      {
+        title: '5. UI — widgets declared as JSX',
+        description: 'PivotUI hosts a real UIManager inside the canvas: widgets are drawn by the engine, hit-tested topmost-first, and support multi-touch (thumb on the joystick + thumb on the button simultaneously). Props sync every render, so the energy bar just reads your game state.',
+        code: `<PivotUI>
+  <PivotButton
+    x={W - 130} y={H - 140} width={104} height={76}
+    text="JUMP" style={{ background: '#16a34a' }}
+    onClick={() => { jumpQueued.current = true; }}
+  />
+  <PivotProgressBar
+    x={16} y={16} width={150} height={16}
+    value={energy.current / MAX_ENERGY}
+    fill={energy.current >= 1 ? '#22c55e' : '#dc2626'}
+    label="ENERGY"
+  />
+  <PivotJoystick x={92} y={H - 100} radius={60} widgetRef={stickRef} />
+</PivotUI>`,
+        language: 'tsx',
+      },
+      {
+        title: '6. The render — refs in, shapes out',
+        description: 'Game state lives in useRef (mutated at 60fps with no React overhead); a frame counter triggers re-renders; shape components draw from the refs. autoClear (new in 2.0) wipes the canvas before each frame so nothing smears.',
+        code: `<PivotCanvas width={W} height={H} background="#101024" autoClear>
+  {platforms.current.map((pl, i) => (
+    <PivotRectangle
+      key={i}
+      position={{ x: pl.x, y: pl.y }} width={pl.w} height={pl.h}
+      fill={pl.oneWay ? '#a16207' : pl.vx !== undefined ? '#7c3aed' : '#334155'}
+    />
+  ))}
+  <PivotRectangle position={{ x: p.x, y: p.y }} width={28} height={28} fill="#38bdf8" />
+  {/* ...coins, label, PivotUI... */}
+</PivotCanvas>`,
+        language: 'tsx',
+      },
+    ],
+  },
+  {
     id: 'bouncingball',
     title: 'Bouncing Ball',
     description: 'A simple physics animation demo — the perfect first PivotX project.',
@@ -1467,3 +1578,168 @@ const parallax = (depth: number) => -(cam.x * depth) % W;
     ],
   },
 ];
+
+// ─── 2.0 upgrade tips ─────────────────────────────────────────────────────────
+// Every tutorial gets a closing section showing how the pIvotX 2.0 engines
+// simplify (or supercharge) what the game hand-rolled against 1.x.
+// v1 code keeps working — 2.0 is fully backwards-compatible.
+
+const V2_UPGRADE_TIPS: Record<string, CodeSection> = {
+  bouncingball: {
+    title: '⚡ Upgrade to 2.0: real restitution',
+    description: 'The hand-rolled velocity flip can become engine physics: stepBody with the new bounce option gives sub-stepped, tunnel-proof bouncing with a rest threshold so the ball eventually settles.',
+    code: `const ball = { x: 100, y: 50, vx: 220, vy: 0, width: 48, height: 48, grounded: false };
+const walls = [
+  { x: 0, y: H - 10, w: W, h: 10 },   // floor
+  { x: -10, y: 0, w: 10, h: H },      // left wall
+  { x: W, y: 0, w: 10, h: H },        // right wall
+];
+
+useGameLoop((dt) => {
+  stepBody(ball, walls, dt, { gravity: 900, bounce: 0.8 });  // that's it
+});`,
+    language: 'tsx',
+  },
+  playermovement: {
+    title: '⚡ Upgrade to 2.0: the input engine',
+    description: 'All the keydown/keyup listeners and the pressed-keys Set disappear — Keyboard.getAxis merges arrows + WASD, and justPressed gives clean single-frame triggers. Gamepads come free with the same three lines.',
+    code: `import { Keyboard, GamepadInput } from 'pivotx/react';
+
+useGameLoop((dt) => {
+  // replaces ~25 lines of event-listener plumbing:
+  player.vx = SPEED * (Keyboard.getAxis('horizontal') + GamepadInput.getStick('left').x);
+  player.vy = SPEED * (Keyboard.getAxis('vertical')   + GamepadInput.getStick('left').y);
+  if (Keyboard.justPressed('space') || GamepadInput.justPressed('a')) dash();
+});`,
+    language: 'tsx',
+  },
+  staticscene: {
+    title: '⚡ Upgrade to 2.0: crisp text & Retina rendering',
+    description: 'Labels now support multi-line text, word-wrap, and outlines — great over detailed scenes. And a hiDPI canvas makes the whole render pixel-sharp on Retina displays.',
+    code: `// Multi-line, wrapped, outlined caption
+const caption = new Label('A quiet valley\\nat golden hour', Point(300, 40), 'bold 22px Georgia');
+caption.maxWidth = 260;        // word-wrap long lines
+caption.strokeColor = '#000';  // outline keeps it readable over the art
+caption.strokeWidth = 3;
+
+// Vanilla/TS: render at devicePixelRatio for Retina-sharp output
+const canvas = new Canvas('scene', { hiDPI: true });`,
+    language: 'tsx',
+  },
+  spaceshooter: {
+    title: '⚡ Upgrade to 2.0: SpatialHash + one-shot SFX',
+    description: 'Bullet-vs-enemy checks go from O(bullets × enemies) to O(n) with the new SpatialHash broad-phase. And laser sounds stop cutting each other off with playOneShot.',
+    code: `const hash = new SpatialHash(64);
+
+useGameLoop((dt) => {
+  hash.clear();
+  for (const e of enemies) hash.insert(e, createAABB(e.x, e.y, e.w, e.h));
+
+  for (const b of bullets) {
+    // only test enemies actually near this bullet
+    for (const e of hash.query(createAABB(b.x - 4, b.y - 4, 8, 8))) {
+      if (circleAABBOverlap({ x: b.x, y: b.y, radius: 4 }, createAABB(e.x, e.y, e.w, e.h))) {
+        explode(e);
+        SoundManager.getSound('laserHit')?.playOneShot();   // overlapping SFX
+      }
+    }
+  }
+});`,
+    language: 'tsx',
+  },
+  dungeon: {
+    title: '⚡ Upgrade to 2.0: scenes & game-time timers',
+    description: 'The if-chains for menu/playing/paused/inventory states become a SceneManager stack — push the pause scene over the frozen dungeon, pop to resume. Trap timers pause automatically with the game.',
+    code: `class DungeonScene extends Scene {
+  timers = new Timers();
+  enter() { this.timers.every(3, () => this.spawnTrapWave()); }
+  update(dt) {
+    this.timers.update(dt);              // pauses when this scene isn't on top
+    if (Keyboard.justPressed('escape')) this.manager.push(new PauseScene());
+  }
+  draw(ctx) { /* dungeon rendering */ }
+}
+
+class PauseScene extends Scene {
+  update(dt) { if (Keyboard.justPressed('escape')) this.manager.pop(); }
+  draw(ctx) { /* dim overlay — the dungeon still draws underneath */ }
+}`,
+    language: 'tsx',
+  },
+  carrace: {
+    title: '⚡ Upgrade to 2.0: rebindable controls & rumble',
+    description: 'InputMap names your actions once and binds any mix of keys and controller buttons — a settings screen just calls bind() again. Crashes feel physical with gamepad rumble.',
+    code: `InputMap.bind('steerLeft',  ['left', 'a', 'gamepad:left']);
+InputMap.bind('steerRight', ['right', 'd', 'gamepad:right']);
+InputMap.bind('nitro',      ['space', 'gamepad:a']);
+
+useGameLoop((dt) => {
+  if (InputMap.isDown('steerLeft'))  car.lane -= LANE_SPEED * dt;
+  if (InputMap.isDown('steerRight')) car.lane += LANE_SPEED * dt;
+  if (InputMap.justPressed('nitro')) boost();
+});
+
+function onCrash() {
+  GamepadInput.vibrate(300, 1.0);   // full rumble for 300ms
+  camera.shake(10, 0.4);
+}`,
+    language: 'tsx',
+  },
+  nexus2500: {
+    title: '⚡ Upgrade to 2.0: tweens for cinematic juice',
+    description: 'Story beats and UI animation stop being hand-lerped state machines — the tween engine animates any numeric property with easing, delays, and chained callbacks. Camera shake sells the boss hits.',
+    code: `const tweens = new TweenManager();
+
+function bossEntrance(boss) {
+  tweens.to(boss, { y: 120 }, 1.2, 'easeOutBack')          // drop in
+        .then(() => {
+          camera.shake(12, 0.5);                            // impact!
+          tweens.to(titleCard, { opacity: 1 }, 0.8, 'easeOutQuad', 0.3);
+        });
+}
+
+useGameLoop((dt) => {
+  tweens.update(dt);
+  camera.update(dt);   // drives the shake
+});`,
+    language: 'tsx',
+  },
+  aetherdrift: {
+    title: '⚡ Upgrade to 2.0: Vec2 math & tunnel-proof projectiles',
+    description: 'Homing and steering code reads like the math it is with Vec2 helpers, and fast projectiles can no longer skip through thin obstacles thanks to swept circle casts.',
+    code: `// Homing missile steering
+const toTarget = Vec2.normalize(Vec2.sub(target.position, missile.position));
+missile.velocity = Vec2.clampLength(
+  Vec2.add(missile.velocity, Vec2.scale(toTarget, TURN_RATE * dt)),
+  MAX_SPEED,
+);
+
+// A projectile moving 2000px/frame still can't tunnel:
+const hit = sweepCircleAABB(
+  { x: shot.x, y: shot.y, radius: 4 },
+  { x: shot.vx * dt, y: shot.vy * dt },
+  asteroid.bounds,
+);
+if (hit) impactAt(hit.point, hit.normal);`,
+    language: 'tsx',
+  },
+  crystalcaverns: {
+    title: '⚡ Upgrade to 2.0: tilemap physics & dead-zone camera',
+    description: 'The manual tile-collision resolution collapses into stepBodyOnTilemap (broad-phase culled, so huge caverns stay fast), and the camera gets the classic platformer dead-zone so small hops don\'t jiggle the view.',
+    code: `useGameLoop((dt) => {
+  // replaces the hand-rolled solid-tile collision pass:
+  stepBodyOnTilemap(player, tilemap, dt, { gravity: 1400, maxFallSpeed: 900 });
+
+  // camera only scrolls when the player leaves a 140×100 centre box
+  camera.followWithDeadZone(player, 140, 100, 0.15, dt);
+  camera.clamp(tilemap.widthInPixels, tilemap.heightInPixels);
+  camera.update(dt);
+});`,
+    language: 'tsx',
+  },
+};
+
+for (const tutorial of GAME_TUTORIALS) {
+  const tip = V2_UPGRADE_TIPS[tutorial.id];
+  if (tip) tutorial.codeBreakdown.push(tip);
+}
